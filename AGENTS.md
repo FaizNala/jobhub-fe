@@ -1,41 +1,77 @@
-This is an Expo/React Native mobile application. Prioritize mobile-first patterns, performance, and cross-platform compatibility.
+# JobHub Frontend (Expo React Native)
 
-## Expo has changed — do not trust your training data
+This is an Expo / React Native mobile application following modern Expo architecture (SDK 58+).
+
+## ⚠️ Expo has changed — do not trust your training data
 
 Expo ships breaking changes every SDK release. APIs you remember are likely renamed, moved, or removed. Before writing any code that touches an Expo, EAS, or React Native API:
 
-1. Read the major version of the `expo` package in `package.json`.
-2. Fetch the matching versioned docs: `https://docs.expo.dev/versions/v<major>.0.0/`
-3. For anything else, fetch https://docs.expo.dev/llms.txt — an index of all Expo docs with corrections to common LLM misconceptions. Follow its links to the specific page you need; never answer from memory.
+1. Read the major version of the `expo` package in `package.json` (Currently: **SDK 58**).
+2. Fetch the matching versioned docs: `https://docs.expo.dev/versions/v58.0.0/`
+3. Fetch `https://docs.expo.dev/llms.txt` — an index of all Expo docs with corrections to common LLM misconceptions. Follow its links to the specific page you need; never answer from memory.
 
-## Commands
+---
 
-Use `bunx` instead of `npx` if the project uses bun (`bun.lock` present).
+## 🛠️ Official Expo Agent Skills
+
+This repository includes 25 official Expo skills in `.agents/skills/` (from `github.com/expo/skills`):
+- `expo-overview`: Start here for general tasks.
+- `expo-project-structure`: Scaffolding files and directories.
+- `expo-router`: Navigation, stacks, tabs, modals, deep linking.
+- `expo-native-ui`: Native styling, Apple HIG, Material 3, semantic themes.
+- `expo-ui`: SwiftUI and Jetpack Compose components via `@expo/ui`.
+- `expo-data-fetching`: Networking, caching, React Query, SWR.
+- `expo-dev-client`: Local development builds with native code.
+- `eas-app-stores` & `eas-hosting`: Deployment and release pipelines.
+- `eas-workflows`: CI/CD automation for Expo.
+
+AI coding agents (Antigravity, Cursor, Claude Code, Windsurf, Codex, etc.) should consult these skills before executing tasks.
+
+---
+
+## 🔌 Model Context Protocol (MCP)
+
+The Expo MCP server is configured in `.mcp.json` and `.cursor/mcp.json`:
+- **Server URL:** `https://mcp.expo.dev/mcp`
+- **Transport:** HTTP (SSE / Streamable HTTP)
+- **Capabilities:**
+  - Live access to latest official Expo docs.
+  - Safe package installation (`npx expo install`).
+  - Query EAS build history, EAS Update channels, TestFlight metadata.
+  - Take simulator screenshots and interact with running app instances.
+
+---
+
+## 📋 Essential Commands
 
 ```bash
 npx expo install <package>  # ALWAYS use instead of npm/yarn/pnpm/bun add — resolves SDK-compatible versions
-npx expo start              # start the dev server
-npx expo lint               # lint
-npx tsc --noEmit            # typecheck
-npx expo-doctor             # diagnose dependency and config issues
-npx expo install --fix      # fix incompatible package versions
+npx expo start              # Start the local development server (Metro bundler)
+npx expo start --android    # Run on Android emulator / device
+npx expo start --ios        # Run on iOS simulator (macOS required)
+npx expo start --web        # Run in browser
+npx expo lint               # Run linter
+npx tsc --noEmit            # TypeScript type check
+npx expo-doctor             # Diagnose dependency and configuration health
+npx expo install --fix      # Fix incompatible package versions
 ```
 
-Run lint and typecheck before declaring any task done.
+---
 
-## Navigation & Routing
+## 🏗️ Architecture & Best Practices
 
-- Use **Expo Router** for all navigation. Routes live in `src/app/` — every file there is a screen, `_layout.tsx` files define navigators. Keep non-route code (components, hooks, utils) outside `src/app/`.
-- Import `Link`, `router`, and `useLocalSearchParams` from `expo-router`.
-- Docs: https://docs.expo.dev/router/introduction.md
+1. **Continuous Native Generation (CNG):**
+   - The repository does NOT track `android/` and `ios/` in version control.
+   - Configure native behavior (permissions, schemes, icons, plugins) in `app.json` or Config Plugins.
+   - Run `npx expo prebuild` when compiling native binaries.
 
-## Building with EAS
+2. **Navigation (Expo Router):**
+   - Routes live strictly in `src/app/`.
+   - Every file in `src/app/` represents a route; `_layout.tsx` defines the navigator.
+   - Reusable components live in `src/components/`, business logic in `src/hooks/` and `src/services/`.
 
-Use EAS to build, sign, and submit the app in the cloud (`eas build`, `eas submit`) and to ship over-the-air updates (`eas update`) — no local Xcode or Android Studio required. Run EAS CLI as `bunx eas-cli <command>` in Bun projects, or `npx eas-cli@latest <command>` otherwise; substitute that for bare `eas` in docs examples.
-Docs: https://docs.expo.dev/eas/index.md
+3. **Development Builds:**
+   - Expo Go is for initial prototyping. When adding custom native code, install `expo-dev-client` and create a development build via `npx expo run:android` or EAS Build.
 
-## Rules
-
-- If `ios/` and `android/` directories do not exist, they are generated (Continuous Native Generation). Never create or edit them by hand — configure native behavior in `app.json` and config plugins.
-- Expo Go only includes its bundled native modules. After adding a library with native code, the app needs a development build: `npx expo run:ios|android` locally, or `eas build --profile development`.
-- Prefer recommended Expo modules over third-party libraries, and check your available skills before adding dependencies. Docs: https://docs.expo.dev/versions/latest/index.md
+4. **Quality Gate:**
+   - Always verify changes with `npx expo-doctor` and `npx tsc --noEmit`.

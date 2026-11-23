@@ -1,0 +1,38 @@
+---
+description: Official Expo SDK 58 & React Native Agent Guidelines for JobHub
+globs: "**/*"
+---
+
+# Expo SDK 58 & React Native Guidelines for JobHub
+
+## 1. Expo Agent Skills & MCP
+- This repository has installed the official 25 Expo agent skills located in `.agents/skills/`.
+- Available skills include:
+  - `expo-overview`: Entry point for Expo SDK and EAS tasks.
+  - `expo-project-structure`: Directory structure conventions.
+  - `expo-router`: File-based routing, stacks, tabs, dynamic params.
+  - `expo-native-ui`: Apple HIG, native controls, semantic themes.
+  - `expo-ui`: SwiftUI and Jetpack Compose bindings via `@expo/ui`.
+  - `expo-data-fetching`: React Query, SWR, fetch, and offline data.
+  - `expo-dev-client`: Building custom debug native runtimes.
+  - `eas-app-stores`, `eas-hosting`, `eas-update`, `eas-workflows`.
+- Remote Expo MCP Server is configured at `https://mcp.expo.dev/mcp` for live docs, build logs, and simulator control.
+
+## 2. Package Management & Dependencies
+- **ALWAYS** install packages using `npx expo install <package>`. Never use raw `npm/yarn/pnpm/bun add` for libraries with native components.
+- Run `npx expo-doctor` to audit dependencies.
+- Fix version conflicts using `npx expo install --fix`.
+
+## 3. Continuous Native Generation (CNG)
+- Do NOT create, track, or edit `android/` and `ios/` folders manually in git.
+- Configure all native permissions, app icons, splash screens, and schemes in `app.json` or config plugins.
+- Run `npx expo prebuild` when native compilation is needed.
+
+## 4. Routing & Architecture (Expo Router)
+- All routes live in `src/app/`.
+- Navigators are declared in `_layout.tsx`.
+- Non-route components, hooks, constants, and utilities must live outside `src/app/` (e.g. `src/components/`, `src/hooks/`, `src/constants/`, `src/services/`).
+- Use typed routing (`experiments.typedRoutes: true` enabled in `app.json`).
+
+## 5. Verification Gate
+- Run `npx expo-doctor` and `npx tsc --noEmit` before declaring any task complete.
