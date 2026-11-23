@@ -21,5 +21,6 @@ export interface Job {
   tags: string[];
   cardVariant: 'default' | 'uber' | 'amazon' | 'spotify' | 'google';
   brandColor?: string;
+  isFeatured?: boolean;
   interviewStages: InterviewStage[];
 }

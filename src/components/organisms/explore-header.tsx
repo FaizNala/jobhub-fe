@@ -4,6 +4,7 @@ import { SlidersHorizontal, Search } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { Colors, Radius } from '@/constants/theme';
 import { Display, Body, Label } from '@/components/atoms/typography';
+import { CandidateAvatar } from '@/components/atoms/candidate-avatar';
 
 interface ExploreHeaderProps {
   onPressFilter?: () => void;
@@ -23,11 +24,10 @@ export function ExploreHeader({ onPressFilter, onPressSearch }: ExploreHeaderPro
 
   return (
     <View style={styles.container}>
-      {/* Top Profile / Action Row */}
+      {/* Top Candidate Row with Real SVG Avatar */}
       <View style={styles.userRow}>
-        <View style={styles.avatar}>
-          <Label style={styles.avatarText}>MC</Label>
-        </View>
+        <CandidateAvatar size={44} />
+
         <View style={styles.userInfo}>
           <Label style={styles.userName}>Michel Clark</Label>
           <Body style={styles.userRole}>Software Engineer</Body>
@@ -38,11 +38,11 @@ export function ExploreHeader({ onPressFilter, onPressSearch }: ExploreHeaderPro
           accessibilityRole="button"
           accessibilityLabel="Search positions"
           style={styles.searchIconButton}>
-          <Search size={18} color="#121212" />
+          <Search size={18} color="#121212" strokeWidth={2.2} />
         </Pressable>
       </View>
 
-      {/* Main Title & Filter Pill */}
+      {/* Main Title & Filter Trigger */}
       <View style={styles.titleRow}>
         <Display style={styles.heroText}>
           EXPLORE{'\n'}VACANCIES
@@ -53,7 +53,7 @@ export function ExploreHeader({ onPressFilter, onPressSearch }: ExploreHeaderPro
           accessibilityRole="button"
           accessibilityLabel="Open filters"
           style={styles.filterButton}>
-          <SlidersHorizontal size={14} color="#121212" />
+          <SlidersHorizontal size={14} color="#121212" strokeWidth={2.2} />
           <Label style={styles.filterText}>Filters</Label>
         </Pressable>
       </View>
@@ -73,21 +73,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
   },
-  avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: Radius.full,
-    backgroundColor: Colors.light.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1.5,
-    borderColor: '#121212',
-  },
-  avatarText: {
-    fontSize: 14,
-    color: '#121212',
-    fontWeight: '700',
-  },
   userInfo: {
     flex: 1,
   },
@@ -98,7 +83,7 @@ const styles = StyleSheet.create({
   },
   userRole: {
     fontSize: 12,
-    color: '#6B6D66',
+    color: '#5A5D54',
   },
   searchIconButton: {
     width: 44,
@@ -109,6 +94,11 @@ const styles = StyleSheet.create({
     borderColor: Colors.light.border,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 2,
   },
   titleRow: {
     flexDirection: 'row',
@@ -119,6 +109,8 @@ const styles = StyleSheet.create({
     fontSize: 28,
     lineHeight: 32,
     color: '#121212',
+    fontWeight: '900',
+    letterSpacing: -0.8,
   },
   filterButton: {
     flexDirection: 'row',
@@ -130,6 +122,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: Colors.light.border,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 2,
   },
   filterText: {
     fontSize: 13,

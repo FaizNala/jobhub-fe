@@ -1,8 +1,3 @@
-/**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://unistyl.es/), etc.
- */
-
 import '@/global.css';
 
 import { Platform } from 'react-native';
@@ -10,60 +5,75 @@ import { Platform } from 'react-native';
 export const Colors = {
   light: {
     text: '#121212',
-    background: '#F8F7F2',
+    textSecondary: '#5A5D54',
+    textMuted: '#8A8D84',
+    background: '#F4F6F0',
     backgroundElement: '#FFFFFF',
     backgroundSelected: '#B8F23E',
-    textSecondary: '#6B6D66',
     primary: '#B8F23E',
     primaryForeground: '#121212',
     darkAnchor: '#121212',
-    border: '#ECE9DF',
+    border: '#E2E6DC',
     card: '#FFFFFF',
-    // Functional category badges for JobHub
-    tagPurple: '#635BFF',
-    tagYellow: '#F5C242',
-    tagCoral: '#FF6B57',
-    tagLime: '#B8F23E',
+    cardMuted: '#EDF1E7',
+    tagBackground: '#EAEFE2',
+    tagText: '#121212',
   },
   dark: {
     text: '#FFFFFF',
-    background: '#0E0F10',
-    backgroundElement: '#1A1C1E',
+    textSecondary: '#A0A49B',
+    textMuted: '#71756D',
+    background: '#0F100E',
+    backgroundElement: '#181A16',
     backgroundSelected: '#B8F23E',
-    textSecondary: '#9E9E98',
     primary: '#B8F23E',
     primaryForeground: '#121212',
     darkAnchor: '#000000',
-    border: '#26282B',
-    card: '#1A1C1E',
-    tagPurple: '#7B74FF',
-    tagYellow: '#FCD34D',
-    tagCoral: '#FF8A78',
-    tagLime: '#B8F23E',
+    border: '#242821',
+    card: '#181A16',
+    cardMuted: '#20241D',
+    tagBackground: '#242A1D',
+    tagText: '#B8F23E',
   },
 } as const;
 
 export const Radius = {
   xs: 6,
-  sm: 10,
+  sm: 8,
+  md: 14,
+  lg: 20,
+  xl: 28,
+  full: 9999,
+} as const;
+
+export const Spacing = {
+  half: 2,
+  one: 4,
+  two: 8,
+  three: 12,
+  four: 16,
+  five: 20,
+  six: 24,
+  seven: 28,
+  eight: 32,
+  nine: 36,
+  ten: 40,
+  xs: 4,
+  sm: 8,
   md: 16,
   lg: 24,
   xl: 32,
-  full: 9999,
+  xxl: 40,
 } as const;
 
 export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
 
 export const Fonts = Platform.select({
   ios: {
-    /** iOS `UIFontDescriptorSystemDesignDefault` */
     sans: 'system-ui',
-    /** iOS `UIFontDescriptorSystemDesignSerif` */
-    serif: 'ui-serif',
-    /** iOS `UIFontDescriptorSystemDesignRounded` */
-    rounded: 'ui-rounded',
-    /** iOS `UIFontDescriptorSystemDesignMonospaced` */
-    mono: 'ui-monospace',
+    serif: 'Georgia',
+    rounded: 'system-ui',
+    mono: 'Menlo',
   },
   default: {
     sans: 'normal',
@@ -72,22 +82,9 @@ export const Fonts = Platform.select({
     mono: 'monospace',
   },
   web: {
-    sans: 'var(--font-display)',
-    serif: 'var(--font-serif)',
-    rounded: 'var(--font-rounded)',
-    mono: 'var(--font-mono)',
+    sans: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+    serif: "Georgia, Cambria, 'Times New Roman', Times, serif",
+    rounded: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+    mono: "ui-monospace, Menlo, Monaco, 'Cascadia Mono', 'Segoe UI Mono', monospace",
   },
 });
-
-export const Spacing = {
-  half: 2,
-  one: 4,
-  two: 8,
-  three: 16,
-  four: 24,
-  five: 32,
-  six: 64,
-} as const;
-
-export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;
-export const MaxContentWidth = 800;

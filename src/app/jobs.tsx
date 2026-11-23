@@ -68,7 +68,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.light.background,
   },
   scrollContent: {
-    paddingBottom: 120,
+    paddingBottom: 110,
   },
   header: {
     paddingHorizontal: 20,
@@ -103,7 +103,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 14,
-    color: '#6B6D66',
+    color: '#5A5D54',
     lineHeight: 20,
   },
   listHeader: {
@@ -120,6 +120,6 @@ const styles = StyleSheet.create({
   },
   countText: {
     fontSize: 12,
-    color: '#6B6D66',
+    color: '#5A5D54',
   },
 });

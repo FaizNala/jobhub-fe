@@ -15,6 +15,7 @@ import { Display, Heading, Body, Label } from '@/components/atoms/typography';
 import { BadgeChip } from '@/components/atoms/badge-chip';
 import { PillButton } from '@/components/atoms/pill-button';
 import { StageStepCard } from '@/components/molecules/stage-step-card';
+import { CompanyLogo } from '@/components/atoms/company-logo';
 
 interface JobDetailModalProps {
   job: Job | null;
@@ -68,7 +69,7 @@ export function JobDetailModal({ job, visible, onClose }: JobDetailModalProps) {
             style={[styles.saveButton, isSaved && styles.savedActive]}>
             <Bookmark
               size={18}
-              color={isSaved ? '#121212' : '#6B6D66'}
+              color={isSaved ? '#121212' : '#5A5D54'}
               fill={isSaved ? '#B8F23E' : 'transparent'}
             />
           </Pressable>
@@ -79,27 +80,25 @@ export function JobDetailModal({ job, visible, onClose }: JobDetailModalProps) {
           contentContainerStyle={styles.scrollContent}>
           {/* Company Hero Card */}
           <View style={styles.heroCard}>
-            <View style={styles.logoCircle}>
-              <Label style={styles.logoText}>{job.companyInitial}</Label>
-            </View>
+            <CompanyLogo company={job.company} size={56} />
 
             <Heading style={styles.companyHeading}>{job.company}</Heading>
             <Display style={styles.titleDisplay}>{job.title}</Display>
             <View style={styles.locationContainer}>
-              <MapPin size={13} color="#6B6D66" />
+              <MapPin size={13} color="#5A5D54" />
               <Body style={styles.locationDetail}>
                 {job.location} · {job.workplaceType}
               </Body>
             </View>
 
             <View style={styles.metaPillsRow}>
-              <BadgeChip label={job.salary} variant="dark" />
+              <BadgeChip label={job.salary} variant="lime" />
               <BadgeChip label={job.workplaceType} variant="neutral" />
-              <BadgeChip label={job.employmentType} variant="lime" />
+              <BadgeChip label={job.employmentType} variant="outline" />
             </View>
           </View>
 
-          {/* Interview Stages Section (Image 5 Reference) */}
+          {/* Interview Stages Section */}
           <View style={styles.sectionHeader}>
             <Heading style={styles.sectionTitle}>Interview Stages</Heading>
             <BadgeChip label={`${job.interviewStages.length} Stages`} variant="neutral" />
@@ -146,122 +145,110 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: Colors.light.border,
+    backgroundColor: '#FFFFFF',
   },
   navButton: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    height: 40,
-    paddingHorizontal: 12,
-    borderRadius: Radius.full,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: Colors.light.border,
+    minHeight: 44,
   },
   navText: {
     fontSize: 14,
     color: '#121212',
   },
   saveButton: {
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
     borderRadius: Radius.full,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
     backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: Colors.light.border,
   },
   savedActive: {
-    backgroundColor: '#EAF9CE',
-    borderColor: '#B8F23E',
+    backgroundColor: Colors.light.primary,
+    borderColor: Colors.light.primary,
   },
   scrollContent: {
-    padding: 20,
-    gap: 20,
     paddingBottom: 40,
   },
   heroCard: {
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingTop: 28,
+    paddingBottom: 24,
     backgroundColor: '#FFFFFF',
-    borderRadius: Radius.lg,
-    padding: 24,
-    alignItems: 'center',
-    borderWidth: 1.5,
-    borderColor: Colors.light.border,
-    gap: 10,
-  },
-  logoCircle: {
-    width: 56,
-    height: 56,
-    borderRadius: Radius.full,
-    backgroundColor: Colors.light.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1.5,
-    borderColor: '#121212',
-    marginBottom: 4,
-  },
-  logoText: {
-    fontSize: 20,
-    color: '#121212',
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.light.border,
+    gap: 12,
   },
   companyHeading: {
-    fontSize: 16,
-    color: '#6B6D66',
+    fontSize: 15,
+    color: '#5A5D54',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
   },
   titleDisplay: {
-    fontSize: 22,
+    fontSize: 24,
     lineHeight: 28,
     textAlign: 'center',
     color: '#121212',
+    fontWeight: '800',
   },
   locationContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
+    gap: 6,
   },
   locationDetail: {
     fontSize: 13,
-    color: '#6B6D66',
+    color: '#5A5D54',
   },
   metaPillsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
+    marginTop: 6,
     justifyContent: 'center',
-    marginTop: 8,
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    paddingHorizontal: 20,
+    marginTop: 24,
+    marginBottom: 12,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 17,
     color: '#121212',
+    fontWeight: '700',
   },
   stagesList: {
+    paddingHorizontal: 20,
     gap: 12,
   },
   bottomBar: {
-    padding: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
     backgroundColor: '#FFFFFF',
     borderTopWidth: 1,
     borderTopColor: Colors.light.border,
   },
   successBox: {
-    height: 48,
-    borderRadius: Radius.full,
-    backgroundColor: '#EAF9CE',
-    borderWidth: 1.5,
-    borderColor: '#B8F23E',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
+    paddingVertical: 14,
+    borderRadius: Radius.full,
+    backgroundColor: '#EAF9CE',
   },
   successText: {
-    color: '#2F4F00',
     fontSize: 14,
+    color: '#2F4F00',
+    fontWeight: '700',
   },
 });

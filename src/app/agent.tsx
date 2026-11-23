@@ -2,7 +2,7 @@ import React from 'react';
 import { View, ScrollView, StyleSheet, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
-import { Target, ArrowUpRight, MessageSquare, FileCheck2, Compass } from 'lucide-react-native';
+import { Target, ArrowUpRight, MessageSquare, FileCheck2 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { Colors, Radius } from '@/constants/theme';
 import { Display, Heading, Body, Label } from '@/components/atoms/typography';
@@ -13,21 +13,21 @@ const PREP_MODULES = [
     title: 'Analyze Resume for Uber L5 Role',
     desc: 'Match qualifications, extract keywords, and suggest concise ATS improvements.',
     icon: FileCheck2,
-    accent: '#635BFF',
+    accent: '#121212',
   },
   {
     id: 'p2',
     title: 'Practice Amazon Behavioral Principles',
     desc: 'Simulate situational interview questions mapped to Amazon Leadership Principles.',
     icon: Target,
-    accent: '#F5C242',
+    accent: '#121212',
   },
   {
     id: 'p3',
     title: 'Compensation Benchmark Calculator',
     desc: 'Review market compensation data for hybrid roles in the San Francisco Bay Area.',
     icon: MessageSquare,
-    accent: '#B8F23E',
+    accent: '#121212',
   },
 ];
 
@@ -72,10 +72,10 @@ export default function AgentScreen() {
                 style={styles.promptCard}>
                 <View style={styles.cardHeader}>
                   <View style={[styles.cardIconBox, { backgroundColor: item.accent }]}>
-                    <Icon size={18} color="#121212" />
+                    <Icon size={18} color="#FFFFFF" strokeWidth={2.2} />
                   </View>
                   <View style={styles.arrowBox}>
-                    <ArrowUpRight size={16} color="#121212" />
+                    <ArrowUpRight size={16} color="#121212" strokeWidth={2.2} />
                   </View>
                 </View>
 
@@ -96,7 +96,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.light.background,
   },
   scrollContent: {
-    paddingBottom: 120,
+    paddingBottom: 110,
   },
   header: {
     paddingHorizontal: 20,
@@ -131,7 +131,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 14,
-    color: '#6B6D66',
+    color: '#5A5D54',
     lineHeight: 20,
   },
   promptList: {
@@ -148,9 +148,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: Radius.lg,
     padding: 18,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: Colors.light.border,
     gap: 10,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 6,
+    elevation: 2,
   },
   cardHeader: {
     flexDirection: 'row',
@@ -168,7 +173,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: Radius.full,
-    backgroundColor: Colors.light.backgroundElement,
+    backgroundColor: '#F4F6F0',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -176,10 +181,11 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#121212',
     lineHeight: 20,
+    fontWeight: '700',
   },
   promptDesc: {
     fontSize: 13,
-    color: '#6B6D66',
+    color: '#5A5D54',
     lineHeight: 18,
   },
 });

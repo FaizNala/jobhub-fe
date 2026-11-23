@@ -80,7 +80,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.light.background,
   },
   scrollContent: {
-    paddingBottom: 120,
+    paddingBottom: 110, // Gives ample space above floating dock
   },
   listHeader: {
     flexDirection: 'row',
@@ -93,10 +93,11 @@ const styles = StyleSheet.create({
   listTitle: {
     fontSize: 16,
     color: '#121212',
+    fontWeight: '700',
   },
   countText: {
     fontSize: 12,
-    color: '#6B6D66',
+    color: '#5A5D54',
   },
   emptyContainer: {
     padding: 32,
@@ -109,7 +110,7 @@ const styles = StyleSheet.create({
   },
   emptySubtitle: {
     fontSize: 13,
-    color: '#6B6D66',
+    color: '#5A5D54',
     textAlign: 'center',
   },
 });

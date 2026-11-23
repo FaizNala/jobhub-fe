@@ -5,7 +5,7 @@ import { usePathname, router } from 'expo-router';
 import { Compass, Bookmark, Target, User } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
-import { Colors, Radius } from '@/constants/theme';
+import { Colors } from '@/constants/theme';
 
 export interface DockTabItem {
   id: string;
@@ -84,7 +84,7 @@ function DockButton({ tab, isActive, onPress }: DockButtonProps) {
   };
 
   return (
-    <Animated.View style={animatedStyle}>
+    <Animated.View style={[animatedStyle, styles.tabSlot]}>
       <Pressable
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
@@ -92,15 +92,15 @@ function DockButton({ tab, isActive, onPress }: DockButtonProps) {
         accessibilityRole="tab"
         accessibilityState={{ selected: isActive }}
         accessibilityLabel={tab.label}
-        style={[styles.tabButton, isActive && styles.activeTabButton]}>
+        style={[styles.tabButton, isActive && styles.tabButtonActive]}>
         <IconComponent
-          size={18}
+          size={19}
           color={isActive ? '#121212' : '#8A8D84'}
           strokeWidth={isActive ? 2.4 : 1.9}
         />
-        {isActive ? (
-          <Text style={styles.activeLabel}>{tab.label}</Text>
-        ) : null}
+        <Text style={[styles.tabLabel, isActive ? styles.labelActive : styles.labelInactive]}>
+          {tab.label}
+        </Text>
       </Pressable>
     </Animated.View>
   );
@@ -117,37 +117,49 @@ const styles = StyleSheet.create({
   dockContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.light.darkAnchor,
-    borderRadius: Radius.full,
-    paddingHorizontal: 8,
-    paddingVertical: 6,
-    gap: 4,
-    borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.14)',
+    justifyContent: 'space-between',
+    backgroundColor: '#121212',
+    width: 320,
+    height: 60,
+    borderRadius: 30, // Perfectly rounded capsule
+    paddingHorizontal: 6,
+    paddingVertical: 5,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.25,
-    shadowRadius: 16,
-    elevation: 10,
+    shadowOpacity: 0.22,
+    shadowRadius: 18,
+    elevation: 12,
   },
-  tabButton: {
-    flexDirection: 'row',
+  tabSlot: {
+    flex: 1,
+    height: '100%',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: Radius.full,
-    minHeight: 44,
-    gap: 6,
   },
-  activeTabButton: {
-    backgroundColor: Colors.light.primary,
-    paddingHorizontal: 16,
+  tabButton: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 3,
+    backgroundColor: 'transparent',
   },
-  activeLabel: {
-    fontSize: 12,
-    fontWeight: '800',
+  tabButtonActive: {
+    backgroundColor: Colors.light.primary, // Symmetrical Electric Lime active capsule
+  },
+  tabLabel: {
+    fontSize: 10,
+    letterSpacing: -0.1,
+  },
+  labelInactive: {
+    color: '#8A8D84',
+    fontWeight: '500',
+  },
+  labelActive: {
     color: '#121212',
-    letterSpacing: -0.2,
+    fontWeight: '800',
   },
 });

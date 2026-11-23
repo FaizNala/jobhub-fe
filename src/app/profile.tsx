@@ -7,6 +7,7 @@ import { Colors, Radius } from '@/constants/theme';
 import { Display, Heading, Body, Label } from '@/components/atoms/typography';
 import { BadgeChip } from '@/components/atoms/badge-chip';
 import { PillButton } from '@/components/atoms/pill-button';
+import { CandidateAvatar } from '@/components/atoms/candidate-avatar';
 
 export default function ProfileScreen() {
   return (
@@ -31,16 +32,14 @@ export default function ProfileScreen() {
 
         {/* Profile Card */}
         <View style={styles.profileCard}>
-          <View style={styles.avatarBig}>
-            <Label style={styles.avatarText}>MC</Label>
-          </View>
+          <CandidateAvatar size={64} />
 
           <Heading style={styles.name}>Michel Clark</Heading>
           <Body style={styles.role}>Staff Frontend & Mobile Engineer</Body>
 
           <View style={styles.metaRow}>
             <View style={styles.metaItem}>
-              <Mail size={13} color="#6B6D66" />
+              <Mail size={13} color="#5A5D54" />
               <Body style={styles.metaText}>michel.clark@work.dev</Body>
             </View>
             <View style={styles.metaItem}>
@@ -53,7 +52,7 @@ export default function ProfileScreen() {
             <BadgeChip label="React Native" variant="lime" />
             <BadgeChip label="TypeScript" variant="neutral" />
             <BadgeChip label="Expo SDK" variant="neutral" />
-            <BadgeChip label="Design Systems" variant="purple" />
+            <BadgeChip label="Design Systems" variant="neutral" />
           </View>
         </View>
 
@@ -91,7 +90,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.light.background,
   },
   scrollContent: {
-    paddingBottom: 100,
+    paddingBottom: 110,
   },
   header: {
     paddingHorizontal: 20,
@@ -108,9 +107,9 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 9999,
-    backgroundColor: Colors.light.primary,
-    borderWidth: 1.5,
-    borderColor: '#121212',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: Colors.light.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -122,84 +121,83 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     lineHeight: 32,
+    color: '#121212',
   },
   profileCard: {
-    marginHorizontal: 20,
     backgroundColor: '#FFFFFF',
     borderRadius: Radius.lg,
     padding: 24,
+    marginHorizontal: 20,
     alignItems: 'center',
     borderWidth: 1.5,
     borderColor: Colors.light.border,
-    gap: 8,
-  },
-  avatarBig: {
-    width: 64,
-    height: 64,
-    borderRadius: 9999,
-    backgroundColor: Colors.light.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: '#121212',
-    marginBottom: 6,
-  },
-  avatarText: {
-    fontSize: 20,
-    color: '#121212',
+    gap: 12,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
   },
   name: {
     fontSize: 20,
+    fontWeight: '800',
     color: '#121212',
   },
   role: {
     fontSize: 13,
-    color: '#6B6D66',
+    color: '#5A5D54',
   },
   metaRow: {
     flexDirection: 'row',
     gap: 16,
-    marginVertical: 6,
+    marginTop: 4,
   },
   metaItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
+    gap: 6,
   },
   metaText: {
     fontSize: 12,
-    color: '#6B6D66',
+    color: '#5A5D54',
   },
   skillsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 6,
+    gap: 8,
     justifyContent: 'center',
     marginTop: 8,
   },
   metricsContainer: {
     flexDirection: 'row',
-    paddingHorizontal: 20,
     gap: 12,
+    paddingHorizontal: 20,
     marginTop: 16,
   },
   metricBox: {
     flex: 1,
     backgroundColor: '#FFFFFF',
-    borderRadius: Radius.lg,
-    padding: 18,
+    borderRadius: Radius.md,
+    padding: 16,
+    alignItems: 'center',
     borderWidth: 1.5,
     borderColor: Colors.light.border,
     gap: 4,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 6,
+    elevation: 2,
   },
   metricValue: {
-    fontSize: 26,
-    lineHeight: 30,
+    fontSize: 28,
+    lineHeight: 34,
     color: '#121212',
+    fontWeight: '800',
   },
   metricLabel: {
     fontSize: 12,
-    color: '#6B6D66',
+    color: '#5A5D54',
   },
   actionSection: {
     paddingHorizontal: 20,

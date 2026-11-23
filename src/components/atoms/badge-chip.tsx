@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, ViewStyle } from 'react-native';
 import { Colors, Radius } from '@/constants/theme';
 
-export type BadgeVariant = 'neutral' | 'lime' | 'purple' | 'yellow' | 'coral' | 'dark';
+export type BadgeVariant = 'neutral' | 'lime' | 'dark' | 'outline' | 'purple' | 'yellow' | 'coral';
 
 interface BadgeChipProps {
   label: string;
@@ -16,40 +16,35 @@ export function BadgeChip({ label, variant = 'neutral', icon, style }: BadgeChip
     switch (variant) {
       case 'lime':
         return {
-          bg: '#EAF9CE',
-          text: '#2F4F00',
+          bg: Colors.light.primary,
+          text: '#121212',
           border: 'transparent',
-        };
-      case 'purple':
-        return {
-          bg: '#F0EEFF',
-          text: '#4C40EB',
-          border: 'transparent',
-        };
-      case 'yellow':
-        return {
-          bg: '#FFF8E6',
-          text: '#92400E',
-          border: 'transparent',
-        };
-      case 'coral':
-        return {
-          bg: '#FFF0EE',
-          text: '#C22A1A',
-          border: 'transparent',
+          fontWeight: '700' as const,
         };
       case 'dark':
         return {
           bg: Colors.light.darkAnchor,
           text: '#FFFFFF',
           border: 'transparent',
+          fontWeight: '600' as const,
         };
-      case 'neutral':
-      default:
+      case 'outline':
         return {
-          bg: '#FFFFFF',
+          bg: 'transparent',
           text: Colors.light.text,
           border: Colors.light.border,
+          fontWeight: '500' as const,
+        };
+      case 'neutral':
+      case 'purple':
+      case 'yellow':
+      case 'coral':
+      default:
+        return {
+          bg: Colors.light.tagBackground,
+          text: Colors.light.tagText,
+          border: 'transparent',
+          fontWeight: '500' as const,
         };
     }
   };
@@ -67,8 +62,10 @@ export function BadgeChip({ label, variant = 'neutral', icon, style }: BadgeChip
         },
         style,
       ]}>
-      {icon ? <View style={styles.iconWrapper}>{icon}</View> : null}
-      <Text style={[styles.label, { color: current.text }]}>{label}</Text>
+      {icon ? <View style={styles.iconBox}>{icon}</View> : null}
+      <Text style={[styles.label, { color: current.text, fontWeight: current.fontWeight }]}>
+        {label}
+      </Text>
     </View>
   );
 }
@@ -77,17 +74,16 @@ const styles = StyleSheet.create({
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: Radius.full,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: Radius.sm, // Clean 8px soft-rect, NOT pill shape (R-11)
     alignSelf: 'flex-start',
   },
-  iconWrapper: {
-    marginRight: 4,
+  iconBox: {
+    marginRight: 6,
   },
   label: {
     fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: -0.2,
+    letterSpacing: -0.1,
   },
 });
