@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   Modal,
   View,
@@ -7,7 +7,7 @@ import {
   Pressable,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ArrowLeft, Bookmark, CheckCircle2, MapPin } from 'lucide-react-native';
+import { ArrowLeft, Bookmark, MapPin } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { Colors, Radius } from '@/constants/theme';
 import { Job } from '../jobs.types';
@@ -16,6 +16,7 @@ import { BadgeChip } from '@/components/atoms/badge-chip';
 import { PillButton } from '@/components/atoms/pill-button';
 import { StageStepCard } from './stage-step-card';
 import { CompanyLogo } from '@/components/atoms/company-logo';
+import { usePipeline } from '@/modules/pipeline';
 
 interface JobDetailModalProps {
   job: Job | null;
@@ -23,25 +24,34 @@ interface JobDetailModalProps {
   onClose: () => void;
 }
 
-export function JobDetailModal({ job, visible, onClose }: JobDetailModalProps) {
-  const [isApplied, setIsApplied] = useState(false);
-  const [isSaved, setIsSaved] = useState(false);
+export function JobDetailModal({
+  job,
+  visible,
+  onClose,
+}: JobDetailModalProps) {
+  const { allItems, create, remove, updateStage } = usePipeline();
 
   if (!job) return null;
 
-  const handleApply = () => {
+  const existingItem = allItems.find(i => i.job.id === job.id);
+  const isSaved = Boolean(existingItem);
+
+  const handleApply = async () => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-    setIsApplied(true);
+    if (existingItem) {
+      await updateStage(existingItem.id, 'applied');
+    } else {
+      await create({ job, stage: 'applied' });
+    }
   };
 
-  const handleToggleSave = () => {
+  const handleToggleSave = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-    setIsSaved(prev => !prev);
-  };
-
-  const handleClose = () => {
-    setIsApplied(false);
-    onClose();
+    if (existingItem) {
+      await remove(existingItem.id);
+    } else {
+      await create({ job, stage: 'shortlisted' });
+    }
   };
 
   return (
@@ -49,23 +59,26 @@ export function JobDetailModal({ job, visible, onClose }: JobDetailModalProps) {
       visible={visible}
       animationType="slide"
       presentationStyle="pageSheet"
-      onRequestClose={handleClose}>
+      onRequestClose={onClose}>
       <SafeAreaView style={styles.modalContainer}>
-        {/* Top Navigation Bar */}
+        {/* Navigation Bar */}
         <View style={styles.navBar}>
           <Pressable
-            onPress={handleClose}
+            onPress={onClose}
+            hitSlop={8}
             accessibilityRole="button"
-            accessibilityLabel="Back to vacancies"
+            accessibilityLabel="Back to previous screen"
             style={styles.navButton}>
             <ArrowLeft size={20} color="#121212" />
             <Label style={styles.navText}>Back</Label>
           </Pressable>
 
+          {/* Bookmark Action */}
           <Pressable
             onPress={handleToggleSave}
+            hitSlop={8}
             accessibilityRole="button"
-            accessibilityLabel="Bookmark this job"
+            accessibilityLabel={isSaved ? 'Remove from shortlist' : 'Save to shortlist'}
             style={[styles.saveButton, isSaved && styles.savedActive]}>
             <Bookmark
               size={18}
@@ -78,7 +91,7 @@ export function JobDetailModal({ job, visible, onClose }: JobDetailModalProps) {
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}>
-          {/* Company Hero Card */}
+          {/* Company Hero Card (Clean "Detail Biasa") */}
           <View style={styles.heroCard}>
             <CompanyLogo company={job.company} size={56} />
 
@@ -98,7 +111,7 @@ export function JobDetailModal({ job, visible, onClose }: JobDetailModalProps) {
             </View>
           </View>
 
-          {/* Interview Stages Section */}
+          {/* Company Interview Stages Guide Section */}
           <View style={styles.sectionHeader}>
             <Heading style={styles.sectionTitle}>Interview Stages</Heading>
             <BadgeChip label={`${job.interviewStages.length} Stages`} variant="neutral" />
@@ -111,22 +124,17 @@ export function JobDetailModal({ job, visible, onClose }: JobDetailModalProps) {
           </View>
         </ScrollView>
 
-        {/* Bottom CTA Bar */}
-        <View style={styles.bottomBar}>
-          {isApplied ? (
-            <View style={styles.successBox}>
-              <CheckCircle2 size={20} color="#2F4F00" />
-              <Label style={styles.successText}>Application Submitted Successfully!</Label>
-            </View>
-          ) : (
+        {/* Bottom CTA Bar: Only when viewed outside tracker and role has not been applied */}
+        {!existingItem ? (
+          <View style={styles.bottomBar}>
             <PillButton
-              label="APPLY FOR THIS JOB"
+              label="APPLY FOR THIS ROLE"
               variant="dark"
               onPress={handleApply}
               style={{ width: '100%' }}
             />
-          )}
-        </View>
+          </View>
+        ) : null}
       </SafeAreaView>
     </Modal>
   );
@@ -168,8 +176,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   savedActive: {
-    backgroundColor: Colors.light.primary,
-    borderColor: Colors.light.primary,
+    backgroundColor: '#EFF3E8',
+    borderColor: '#B8F23E',
   },
   scrollContent: {
     paddingBottom: 40,
@@ -236,19 +244,5 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderTopWidth: 1,
     borderTopColor: Colors.light.border,
-  },
-  successBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 14,
-    borderRadius: Radius.full,
-    backgroundColor: '#EAF9CE',
-  },
-  successText: {
-    fontSize: 14,
-    color: '#2F4F00',
-    fontWeight: '700',
   },
 });

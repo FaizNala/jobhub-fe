@@ -10,15 +10,23 @@ import { PillButton } from '@/components/atoms/pill-button';
 import { CandidateAvatar } from '@/components/atoms/candidate-avatar';
 import { useCandidateProfile } from '@/modules/cv-studio';
 import { useAuth } from '@/modules/auth';
+import { usePipeline } from '@/modules/pipeline';
 
 export default function ProfileScreen() {
   const { profile } = useCandidateProfile();
   const { user } = useAuth();
+  const { countsByStage } = usePipeline();
 
   const displayName = profile?.fullName || user?.name || 'Alex Vance';
   const displayRole = profile?.headline || 'Senior Mobile Engineer';
   const displayEmail = user?.email || 'alex.vance@example.com';
   const displaySkills = profile?.skills || ['React Native', 'TypeScript', 'Expo SDK'];
+
+  const submittedCount =
+    (countsByStage.applied ?? 0) +
+    (countsByStage.interviewing ?? 0) +
+    (countsByStage.offered ?? 0);
+  const interviewCount = countsByStage.interviewing ?? 0;
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
@@ -73,13 +81,13 @@ export default function ProfileScreen() {
         <View style={styles.metricsContainer}>
           <View style={styles.metricBox}>
             <Briefcase size={18} color="#121212" />
-            <Display style={styles.metricValue}>12</Display>
+            <Display style={styles.metricValue}>{submittedCount}</Display>
             <Body style={styles.metricLabel}>Submitted</Body>
           </View>
 
           <View style={styles.metricBox}>
             <Award size={18} color="#2F4F00" />
-            <Display style={[styles.metricValue, { color: '#2F4F00' }]}>3</Display>
+            <Display style={[styles.metricValue, { color: '#2F4F00' }]}>{interviewCount}</Display>
             <Body style={styles.metricLabel}>Interviews</Body>
           </View>
         </View>

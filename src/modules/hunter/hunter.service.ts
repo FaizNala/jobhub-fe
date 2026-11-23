@@ -186,7 +186,16 @@ export const hunterService = {
       await new Promise(r => setTimeout(r, 700));
 
       const targetSessionId = dto.sessionId || MOCK_SESSIONS[0]?.id || 'sess-1';
-      const matchedJobs = MOCK_JOBS.slice(0, 2);
+      const promptLower = (dto.prompt || '').toLowerCase();
+      let matchedJobs = MOCK_JOBS.slice(0, 2);
+
+      if (promptLower.includes('design') || promptLower.includes('product') || promptLower.includes('ux') || promptLower.includes('ui')) {
+        matchedJobs = [MOCK_JOBS[2]]; // Spotify Product Mobile Designer
+      } else if (promptLower.includes('architect') || promptLower.includes('staff')) {
+        matchedJobs = [MOCK_JOBS[1]]; // Amazon Solutions Architect
+      } else if (promptLower.includes('uber') || promptLower.includes('senior')) {
+        matchedJobs = [MOCK_JOBS[0]]; // Uber Senior RN Engineer
+      }
 
       const agentReply: HunterMessage = {
         id: `msg-${Date.now()}`,
