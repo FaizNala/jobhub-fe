@@ -15,6 +15,12 @@ let MOCK_PROFILE: CandidateProfile = {
   summary:
     'Mobile engineer with 6+ years shipping high-performance React Native & iOS architectures. Experienced in offline sync, native modules, and micro-frontend design systems.',
   location: 'San Francisco, CA',
+  preferences: {
+    targetRoles: ['Senior React Native Engineer', 'Mobile Solutions Architect'],
+    minCompensation: '$150k - $210k / year',
+    workModels: ['Remote', 'Hybrid'],
+    targetLocations: ['San Francisco, CA', 'Remote (US)'],
+  },
   skills: [
     'React Native',
     'TypeScript',

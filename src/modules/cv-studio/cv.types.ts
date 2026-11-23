@@ -13,12 +13,22 @@ export interface Education {
   year: string;
 }
 
+export type WorkModelType = 'Remote' | 'Hybrid' | 'On-Site';
+
+export interface JobPreferences {
+  targetRoles: string[];
+  minCompensation: string;
+  workModels: WorkModelType[];
+  targetLocations: string[];
+}
+
 export interface CandidateProfile {
   id: string;
   fullName: string;
   headline: string;
   summary: string;
   location: string;
+  preferences?: JobPreferences;
   skills: string[];
   experiences: WorkExperience[];
   education: Education[];

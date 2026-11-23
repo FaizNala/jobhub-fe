@@ -27,6 +27,7 @@ export default function RootLayout() {
           <Stack.Screen name="index" />
           <Stack.Screen name="jobs" />
           <Stack.Screen name="agent" />
+          <Stack.Screen name="cv" />
           <Stack.Screen name="profile" />
           <Stack.Screen name="explore" />
         </Stack>

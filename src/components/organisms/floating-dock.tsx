@@ -2,22 +2,22 @@ import React from 'react';
 import { View, StyleSheet, Pressable, Text } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePathname, router } from 'expo-router';
-import { Compass, Briefcase, Bot, User } from 'lucide-react-native';
+import { Compass, Briefcase, Bot, FileText, User } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
-import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
-import { Colors } from '@/constants/theme';
 
 export interface DockTabItem {
   id: string;
   route: string;
   label: string;
-  icon: typeof Compass;
+  icon: any;
+  isHero?: boolean;
 }
 
 export const DOCK_TABS: DockTabItem[] = [
   { id: 'explore', route: '/', label: 'Explore', icon: Compass },
   { id: 'tracker', route: '/jobs', label: 'Tracker', icon: Briefcase },
-  { id: 'hunter', route: '/agent', label: 'Hunter', icon: Bot },
+  { id: 'hunter', route: '/agent', label: 'Hunter', icon: Bot, isHero: true }, // The Star: AI Bot
+  { id: 'cv', route: '/cv', label: 'CV Studio', icon: FileText },
   { id: 'profile', route: '/profile', label: 'Profile', icon: User },
 ];
 
@@ -68,41 +68,58 @@ interface DockButtonProps {
 }
 
 function DockButton({ tab, isActive, onPress }: DockButtonProps) {
-  const scale = useSharedValue(1);
   const IconComponent = tab.icon;
 
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
+  // Center Hero Button for Hunter AI (No rubber bounce, no dot pips)
+  if (tab.isHero) {
+    return (
+      <View style={styles.heroSlot}>
+        <Pressable
+          onPress={onPress}
+          accessibilityRole="tab"
+          accessibilityState={{ selected: isActive }}
+          accessibilityLabel="AI Hunter Agent"
+          style={({ pressed }) => [
+            styles.heroButton,
+            isActive ? styles.heroActive : styles.heroInactive,
+            pressed && styles.pressedState,
+          ]}>
+          <IconComponent
+            size={22}
+            color={isActive ? '#121212' : '#B8F23E'}
+            strokeWidth={isActive ? 2.6 : 2.1}
+          />
+        </Pressable>
+        <Text
+          numberOfLines={1}
+          style={[styles.heroText, isActive ? styles.heroTextActive : styles.heroTextInactive]}>
+          Hunter
+        </Text>
+      </View>
+    );
+  }
 
-  const handlePressIn = () => {
-    scale.value = withSpring(0.92, { damping: 15, stiffness: 350 });
-  };
-
-  const handlePressOut = () => {
-    scale.value = withSpring(1, { damping: 15, stiffness: 350 });
-  };
-
+  // Pure & Mature Standard Tabs (No blunt blocks, no extra dot accents)
   return (
-    <Animated.View style={[animatedStyle, styles.tabSlot]}>
+    <View style={styles.tabSlot}>
       <Pressable
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
         onPress={onPress}
         accessibilityRole="tab"
         accessibilityState={{ selected: isActive }}
         accessibilityLabel={tab.label}
-        style={[styles.tabButton, isActive && styles.tabButtonActive]}>
+        style={({ pressed }) => [styles.tabButton, pressed && styles.pressedState]}>
         <IconComponent
           size={19}
-          color={isActive ? '#121212' : '#8A8D84'}
-          strokeWidth={isActive ? 2.4 : 1.9}
+          color={isActive ? '#FFFFFF' : '#73786B'}
+          strokeWidth={isActive ? 2.4 : 1.8}
         />
-        <Text style={[styles.tabLabel, isActive ? styles.labelActive : styles.labelInactive]}>
+        <Text
+          numberOfLines={1}
+          style={[styles.tabLabel, isActive ? styles.labelActive : styles.labelInactive]}>
           {tab.label}
         </Text>
       </Pressable>
-    </Animated.View>
+    </View>
   );
 }
 
@@ -118,18 +135,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#121212',
-    width: 320,
-    height: 60,
-    borderRadius: 30, // Perfectly rounded capsule
-    paddingHorizontal: 6,
-    paddingVertical: 5,
+    backgroundColor: '#121411', // Deep Obsidian Glass
+    width: 348,
+    height: 64,
+    borderRadius: 32, // Perfect pill capsule
+    paddingHorizontal: 8,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
+    borderColor: 'rgba(255, 255, 255, 0.08)',
     shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.22,
-    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.35,
+    shadowRadius: 20,
     elevation: 12,
   },
   tabSlot: {
@@ -141,25 +157,68 @@ const styles = StyleSheet.create({
   tabButton: {
     width: '100%',
     height: '100%',
-    borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 3,
-    backgroundColor: 'transparent',
+    gap: 4,
   },
-  tabButtonActive: {
-    backgroundColor: Colors.light.primary, // Symmetrical Electric Lime active capsule
+  pressedState: {
+    opacity: 0.65, // Crisp, instant native touch feedback (zero rubber bounce)
   },
   tabLabel: {
     fontSize: 10,
     letterSpacing: -0.1,
   },
   labelInactive: {
-    color: '#8A8D84',
+    color: '#73786B',
     fontWeight: '500',
   },
   labelActive: {
-    color: '#121212',
+    color: '#FFFFFF',
+    fontWeight: '700',
+  },
+
+  /* Center Hunter Hero Button */
+  heroSlot: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: 4,
+    gap: 3,
+  },
+  heroButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  heroActive: {
+    backgroundColor: '#B8F23E', // Radiant Electric Lime
+    shadowColor: '#B8F23E',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.45,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  heroInactive: {
+    backgroundColor: '#1A1D16', // Deep Obsidian-Olive
+    borderWidth: 1.5,
+    borderColor: 'rgba(184, 242, 62, 0.4)',
+    shadowColor: '#B8F23E',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  heroText: {
+    fontSize: 9.5,
+    letterSpacing: 0.2,
+  },
+  heroTextActive: {
+    color: '#B8F23E',
     fontWeight: '800',
+  },
+  heroTextInactive: {
+    color: '#B8F23E',
+    fontWeight: '600',
   },
 });
