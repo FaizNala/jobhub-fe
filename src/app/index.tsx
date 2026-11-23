@@ -1,27 +1,25 @@
-import React, { useState, useMemo } from 'react';
+import React from 'react';
 import { View, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { Colors } from '@/constants/theme';
-import { Job, JobCategory } from '@/types/job';
-import { MOCK_JOBS } from '@/constants/mock-jobs';
-import { ExploreHeader } from '@/components/organisms/explore-header';
-import { FilterPillBar } from '@/components/molecules/filter-pill-bar';
-import { BentoJobCard } from '@/components/organisms/bento-job-card';
-import { JobDetailModal } from '@/components/organisms/job-detail-modal';
 import { Heading, Body } from '@/components/atoms/typography';
+import {
+  useJobs,
+  BentoJobCard,
+  FilterPillBar,
+  JobDetailModal,
+  ExploreHeader,
+} from '@/modules/jobs';
 
 export default function HomeScreen() {
-  const [selectedCategory, setSelectedCategory] = useState<JobCategory>('all');
-  const [activeJob, setActiveJob] = useState<Job | null>(null);
-
-  const filteredJobs = useMemo(() => {
-    if (selectedCategory === 'all') return MOCK_JOBS;
-    if (selectedCategory === 'remote') {
-      return MOCK_JOBS.filter(job => job.workplaceType === 'Remote');
-    }
-    return MOCK_JOBS.filter(job => job.category === selectedCategory);
-  }, [selectedCategory]);
+  const {
+    jobs,
+    selectedCategory,
+    activeJob,
+    setSelectedCategory,
+    setActiveJob,
+  } = useJobs();
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
@@ -42,11 +40,11 @@ export default function HomeScreen() {
         {/* Vacancies Count Subtitle */}
         <View style={styles.listHeader}>
           <Heading style={styles.listTitle}>Featured Openings</Heading>
-          <Body style={styles.countText}>{filteredJobs.length} Positions Available</Body>
+          <Body style={styles.countText}>{jobs.length} Positions Available</Body>
         </View>
 
         {/* Bento Job Cards List */}
-        {filteredJobs.map(job => (
+        {jobs.map(job => (
           <BentoJobCard
             key={job.id}
             job={job}
@@ -54,7 +52,7 @@ export default function HomeScreen() {
           />
         ))}
 
-        {filteredJobs.length === 0 ? (
+        {jobs.length === 0 ? (
           <View style={styles.emptyContainer}>
             <Heading style={styles.emptyTitle}>No Vacancies Found</Heading>
             <Body style={styles.emptySubtitle}>
@@ -98,15 +96,17 @@ const styles = StyleSheet.create({
   countText: {
     fontSize: 12,
     color: '#5A5D54',
+    fontWeight: '500',
   },
   emptyContainer: {
     padding: 32,
     alignItems: 'center',
-    gap: 8,
+    justifyContent: 'center',
   },
   emptyTitle: {
     fontSize: 16,
     color: '#121212',
+    marginBottom: 8,
   },
   emptySubtitle: {
     fontSize: 13,

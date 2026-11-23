@@ -4,17 +4,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { Bookmark } from 'lucide-react-native';
 import { Colors } from '@/constants/theme';
-import { MOCK_JOBS } from '@/constants/mock-jobs';
-import { Job } from '@/types/job';
 import { Display, Heading, Body, Label } from '@/components/atoms/typography';
-import { BentoJobCard } from '@/components/organisms/bento-job-card';
-import { JobDetailModal } from '@/components/organisms/job-detail-modal';
+import { Job, BentoJobCard, JobDetailModal } from '@/modules/jobs';
+import { usePipeline } from '@/modules/pipeline';
 
 export default function JobsScreen() {
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
-
-  // Showing first 2 jobs as saved
-  const savedJobs = MOCK_JOBS.slice(0, 2);
+  const { items } = usePipeline();
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
@@ -28,26 +24,26 @@ export default function JobsScreen() {
             <View style={styles.iconCircle}>
               <Bookmark size={16} color="#121212" fill="#B8F23E" />
             </View>
-            <Label style={styles.badgeText}>SAVED ROLES</Label>
+            <Label style={styles.badgeText}>APPLICATION PIPELINE</Label>
           </View>
 
           <Display style={styles.title}>
-            BOOKMARKED{'\n'}POSITIONS
+            TRACKED{'\n'}POSITIONS
           </Display>
           <Body style={styles.subtitle}>
-            Review your shortlisted roles and track active interview deadlines.
+            Monitor your scouted leads, active submissions, and interview milestones.
           </Body>
         </View>
 
         <View style={styles.listHeader}>
-          <Heading style={styles.listTitle}>Shortlisted</Heading>
-          <Body style={styles.countText}>{savedJobs.length} Saved Roles</Body>
+          <Heading style={styles.listTitle}>Active Applications</Heading>
+          <Body style={styles.countText}>{items.length} In Tracking</Body>
         </View>
 
-        {savedJobs.map(job => (
+        {items.map(item => (
           <BentoJobCard
-            key={job.id}
-            job={job}
+            key={item.id}
+            job={item.job}
             onPress={jobItem => setSelectedJob(jobItem)}
           />
         ))}
@@ -74,37 +70,40 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 12,
-    gap: 8,
   },
   badgeRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    marginBottom: 12,
   },
   iconCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 9999,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: Colors.light.border,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#E8ECDF',
   },
   badgeText: {
-    fontSize: 12,
+    fontSize: 11,
+    letterSpacing: 1.2,
     color: '#121212',
-    letterSpacing: 0.5,
+    fontWeight: '700',
   },
   title: {
     fontSize: 28,
     lineHeight: 32,
+    letterSpacing: -0.5,
     color: '#121212',
+    marginBottom: 8,
   },
   subtitle: {
     fontSize: 14,
-    color: '#5A5D54',
     lineHeight: 20,
+    color: '#5A5D54',
   },
   listHeader: {
     flexDirection: 'row',
@@ -117,9 +116,11 @@ const styles = StyleSheet.create({
   listTitle: {
     fontSize: 16,
     color: '#121212',
+    fontWeight: '700',
   },
   countText: {
     fontSize: 12,
     color: '#5A5D54',
+    fontWeight: '500',
   },
 });

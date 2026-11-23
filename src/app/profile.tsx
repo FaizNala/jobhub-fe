@@ -8,8 +8,18 @@ import { Display, Heading, Body, Label } from '@/components/atoms/typography';
 import { BadgeChip } from '@/components/atoms/badge-chip';
 import { PillButton } from '@/components/atoms/pill-button';
 import { CandidateAvatar } from '@/components/atoms/candidate-avatar';
+import { useCandidateProfile } from '@/modules/cv-studio';
+import { useAuth } from '@/modules/auth';
 
 export default function ProfileScreen() {
+  const { profile } = useCandidateProfile();
+  const { user } = useAuth();
+
+  const displayName = profile?.fullName || user?.name || 'Alex Vance';
+  const displayRole = profile?.headline || 'Senior Mobile Engineer';
+  const displayEmail = user?.email || 'alex.vance@example.com';
+  const displaySkills = profile?.skills || ['React Native', 'TypeScript', 'Expo SDK'];
+
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
       <StatusBar style="dark" />
@@ -34,13 +44,13 @@ export default function ProfileScreen() {
         <View style={styles.profileCard}>
           <CandidateAvatar size={64} />
 
-          <Heading style={styles.name}>Michel Clark</Heading>
-          <Body style={styles.role}>Staff Frontend & Mobile Engineer</Body>
+          <Heading style={styles.name}>{displayName}</Heading>
+          <Body style={styles.role}>{displayRole}</Body>
 
           <View style={styles.metaRow}>
             <View style={styles.metaItem}>
               <Mail size={13} color="#5A5D54" />
-              <Body style={styles.metaText}>michel.clark@work.dev</Body>
+              <Body style={styles.metaText}>{displayEmail}</Body>
             </View>
             <View style={styles.metaItem}>
               <ShieldCheck size={13} color="#2F4F00" />
@@ -49,10 +59,13 @@ export default function ProfileScreen() {
           </View>
 
           <View style={styles.skillsRow}>
-            <BadgeChip label="React Native" variant="lime" />
-            <BadgeChip label="TypeScript" variant="neutral" />
-            <BadgeChip label="Expo SDK" variant="neutral" />
-            <BadgeChip label="Design Systems" variant="neutral" />
+            {displaySkills.slice(0, 4).map((skill, index) => (
+              <BadgeChip
+                key={skill}
+                label={skill}
+                variant={index === 0 ? 'lime' : 'neutral'}
+              />
+            ))}
           </View>
         </View>
 
