@@ -1,36 +1,45 @@
 import React from 'react';
 import { View, StyleSheet, Pressable } from 'react-native';
-import { Zap, Sparkles } from 'lucide-react-native';
+import { SlidersHorizontal, Search } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { Colors, Radius } from '@/constants/theme';
 import { Display, Body, Label } from '@/components/atoms/typography';
 
 interface ExploreHeaderProps {
   onPressFilter?: () => void;
+  onPressSearch?: () => void;
 }
 
-export function ExploreHeader({ onPressFilter }: ExploreHeaderProps) {
+export function ExploreHeader({ onPressFilter, onPressSearch }: ExploreHeaderProps) {
   const handleFilterPress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     if (onPressFilter) onPressFilter();
   };
 
+  const handleSearchPress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    if (onPressSearch) onPressSearch();
+  };
+
   return (
     <View style={styles.container}>
-      {/* Top Profile / Welcome Row */}
+      {/* Top Profile / Action Row */}
       <View style={styles.userRow}>
         <View style={styles.avatar}>
           <Label style={styles.avatarText}>MC</Label>
         </View>
         <View style={styles.userInfo}>
           <Label style={styles.userName}>Michel Clark</Label>
-          <Body style={styles.userRole}>Frontend Developer</Body>
+          <Body style={styles.userRole}>Software Engineer</Body>
         </View>
 
-        <View style={styles.proBadge}>
-          <Sparkles size={13} color="#121212" />
-          <Label style={styles.proText}>PRO</Label>
-        </View>
+        <Pressable
+          onPress={handleSearchPress}
+          accessibilityRole="button"
+          accessibilityLabel="Search positions"
+          style={styles.searchIconButton}>
+          <Search size={18} color="#121212" />
+        </Pressable>
       </View>
 
       {/* Main Title & Filter Pill */}
@@ -44,7 +53,7 @@ export function ExploreHeader({ onPressFilter }: ExploreHeaderProps) {
           accessibilityRole="button"
           accessibilityLabel="Open filters"
           style={styles.filterButton}>
-          <Zap size={14} color="#121212" fill="#B8F23E" />
+          <SlidersHorizontal size={14} color="#121212" />
           <Label style={styles.filterText}>Filters</Label>
         </Pressable>
       </View>
@@ -77,6 +86,7 @@ const styles = StyleSheet.create({
   avatarText: {
     fontSize: 14,
     color: '#121212',
+    fontWeight: '700',
   },
   userInfo: {
     flex: 1,
@@ -84,23 +94,21 @@ const styles = StyleSheet.create({
   userName: {
     fontSize: 15,
     color: '#121212',
+    fontWeight: '700',
   },
   userRole: {
     fontSize: 12,
     color: '#6B6D66',
   },
-  proBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+  searchIconButton: {
+    width: 44,
+    height: 44,
     borderRadius: Radius.full,
-    backgroundColor: Colors.light.primary,
-  },
-  proText: {
-    fontSize: 11,
-    color: '#121212',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   titleRow: {
     flexDirection: 'row',
@@ -126,5 +134,6 @@ const styles = StyleSheet.create({
   filterText: {
     fontSize: 13,
     color: '#121212',
+    fontWeight: '600',
   },
 });

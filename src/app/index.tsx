@@ -80,7 +80,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.light.background,
   },
   scrollContent: {
-    paddingBottom: 60,
+    paddingBottom: 120,
   },
   listHeader: {
     flexDirection: 'row',
@@ -99,16 +99,16 @@ const styles = StyleSheet.create({
     color: '#6B6D66',
   },
   emptyContainer: {
+    padding: 32,
     alignItems: 'center',
-    padding: 40,
     gap: 8,
   },
   emptyTitle: {
-    fontSize: 18,
+    fontSize: 16,
     color: '#121212',
   },
   emptySubtitle: {
-    fontSize: 14,
+    fontSize: 13,
     color: '#6B6D66',
     textAlign: 'center',
   },

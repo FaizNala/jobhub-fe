@@ -7,7 +7,7 @@ import {
   Pressable,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ArrowLeft, Bookmark, CheckCircle2 } from 'lucide-react-native';
+import { ArrowLeft, Bookmark, CheckCircle2, MapPin } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { Colors, Radius } from '@/constants/theme';
 import { Job } from '@/types/job';
@@ -85,9 +85,12 @@ export function JobDetailModal({ job, visible, onClose }: JobDetailModalProps) {
 
             <Heading style={styles.companyHeading}>{job.company}</Heading>
             <Display style={styles.titleDisplay}>{job.title}</Display>
-            <Body style={styles.locationDetail}>
-              📍 {job.location} · {job.workplaceType}
-            </Body>
+            <View style={styles.locationContainer}>
+              <MapPin size={13} color="#6B6D66" />
+              <Body style={styles.locationDetail}>
+                {job.location} · {job.workplaceType}
+              </Body>
+            </View>
 
             <View style={styles.metaPillsRow}>
               <BadgeChip label={job.salary} variant="dark" />
@@ -211,6 +214,11 @@ const styles = StyleSheet.create({
     lineHeight: 28,
     textAlign: 'center',
     color: '#121212',
+  },
+  locationContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
   },
   locationDetail: {
     fontSize: 13,

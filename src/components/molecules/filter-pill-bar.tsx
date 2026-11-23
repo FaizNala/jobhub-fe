@@ -11,10 +11,10 @@ interface FilterOption {
 
 const FILTER_OPTIONS: FilterOption[] = [
   { id: 'all', label: 'All Jobs' },
-  { id: 'remote', label: '⚡ Remote' },
-  { id: 'tech', label: '💻 Tech' },
-  { id: 'design', label: '🎨 Design' },
-  { id: 'finance', label: '📊 Finance' },
+  { id: 'remote', label: 'Remote' },
+  { id: 'tech', label: 'Engineering' },
+  { id: 'design', label: 'Design' },
+  { id: 'finance', label: 'Business' },
 ];
 
 interface FilterPillBarProps {
