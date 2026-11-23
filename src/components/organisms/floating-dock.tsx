@@ -2,7 +2,7 @@ import React from 'react';
 import { View, StyleSheet, Pressable, Text } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePathname, router } from 'expo-router';
-import { Compass, Bookmark, Target, User } from 'lucide-react-native';
+import { Compass, Briefcase, Bot, User } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { Colors } from '@/constants/theme';
@@ -16,8 +16,8 @@ export interface DockTabItem {
 
 export const DOCK_TABS: DockTabItem[] = [
   { id: 'explore', route: '/', label: 'Explore', icon: Compass },
-  { id: 'jobs', route: '/jobs', label: 'Saved', icon: Bookmark },
-  { id: 'agent', route: '/agent', label: 'Prep', icon: Target },
+  { id: 'tracker', route: '/jobs', label: 'Tracker', icon: Briefcase },
+  { id: 'hunter', route: '/agent', label: 'Hunter', icon: Bot },
   { id: 'profile', route: '/profile', label: 'Profile', icon: User },
 ];
 

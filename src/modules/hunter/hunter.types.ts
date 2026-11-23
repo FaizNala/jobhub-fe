@@ -21,11 +21,26 @@ export interface HunterMessage {
   suggestedPrompts?: string[];
 }
 
+export interface HunterSession {
+  id: string;
+  title: string;
+  createdAt: number;
+  updatedAt: number;
+  lastSnippet?: string;
+  jobsFoundCount: number;
+}
+
 export interface SendPromptDto {
   prompt: string;
+  sessionId?: string;
   filters?: {
     location?: string;
     role?: string;
     workplaceType?: string;
   };
+}
+
+export interface CreateSessionDto {
+  title?: string;
+  initialPrompt?: string;
 }
