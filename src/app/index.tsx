@@ -1,98 +1,115 @@
-import * as Device from 'expo-device';
-import { Platform, StyleSheet } from 'react-native';
+import React, { useState, useMemo } from 'react';
+import { View, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
-import { AnimatedIcon } from '@/components/animated-icon';
-import { HintRow } from '@/components/hint-row';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
-
-function getDevMenuHint() {
-  if (Platform.OS === 'web') {
-    return <ThemedText type="small">use browser devtools</ThemedText>;
-  }
-  if (Device.isDevice) {
-    return (
-      <ThemedText type="small">
-        shake device or press <ThemedText type="code">m</ThemedText> in terminal
-      </ThemedText>
-    );
-  }
-  const shortcut = Platform.OS === 'android' ? 'cmd+m (or ctrl+m)' : 'cmd+d';
-  return (
-    <ThemedText type="small">
-      press <ThemedText type="code">{shortcut}</ThemedText>
-    </ThemedText>
-  );
-}
+import { StatusBar } from 'expo-status-bar';
+import { Colors } from '@/constants/theme';
+import { Job, JobCategory } from '@/types/job';
+import { MOCK_JOBS } from '@/constants/mock-jobs';
+import { ExploreHeader } from '@/components/organisms/explore-header';
+import { FilterPillBar } from '@/components/molecules/filter-pill-bar';
+import { BentoJobCard } from '@/components/organisms/bento-job-card';
+import { JobDetailModal } from '@/components/organisms/job-detail-modal';
+import { Heading, Body } from '@/components/atoms/typography';
 
 export default function HomeScreen() {
+  const [selectedCategory, setSelectedCategory] = useState<JobCategory>('all');
+  const [activeJob, setActiveJob] = useState<Job | null>(null);
+
+  const filteredJobs = useMemo(() => {
+    if (selectedCategory === 'all') return MOCK_JOBS;
+    if (selectedCategory === 'remote') {
+      return MOCK_JOBS.filter(job => job.workplaceType === 'Remote');
+    }
+    return MOCK_JOBS.filter(job => job.category === selectedCategory);
+  }, [selectedCategory]);
+
   return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.heroSection}>
-          <AnimatedIcon />
-          <ThemedText type="title" style={styles.title}>
-            Welcome to&nbsp;Expo
-          </ThemedText>
-        </ThemedView>
+    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+      <StatusBar style="dark" />
 
-        <ThemedText type="code" style={styles.code}>
-          get started
-        </ThemedText>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}>
+        {/* Header Section */}
+        <ExploreHeader />
 
-        <ThemedView type="backgroundElement" style={styles.stepContainer}>
-          <HintRow
-            title="Try editing"
-            hint={<ThemedText type="code">src/app/index.tsx</ThemedText>}
+        {/* Category Filter Pills */}
+        <FilterPillBar
+          selectedCategory={selectedCategory}
+          onSelectCategory={setSelectedCategory}
+        />
+
+        {/* Vacancies Count Subtitle */}
+        <View style={styles.listHeader}>
+          <Heading style={styles.listTitle}>Featured Openings</Heading>
+          <Body style={styles.countText}>{filteredJobs.length} Positions Available</Body>
+        </View>
+
+        {/* Bento Job Cards List */}
+        {filteredJobs.map(job => (
+          <BentoJobCard
+            key={job.id}
+            job={job}
+            onPress={selected => setActiveJob(selected)}
           />
-          <HintRow title="Dev tools" hint={getDevMenuHint()} />
-          <HintRow
-            title="Fresh start"
-            hint={<ThemedText type="code">npm run reset-project</ThemedText>}
-          />
-        </ThemedView>
+        ))}
 
-        {Platform.OS === 'web' && <WebBadge />}
-      </SafeAreaView>
-    </ThemedView>
+        {filteredJobs.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Heading style={styles.emptyTitle}>No Vacancies Found</Heading>
+            <Body style={styles.emptySubtitle}>
+              Try selecting a different filter category above.
+            </Body>
+          </View>
+        ) : null}
+      </ScrollView>
+
+      {/* Interactive Detail & Interview Stages Modal */}
+      <JobDetailModal
+        job={activeJob}
+        visible={Boolean(activeJob)}
+        onClose={() => setActiveJob(null)}
+      />
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    flexDirection: 'row',
-  },
   safeArea: {
     flex: 1,
-    paddingHorizontal: Spacing.four,
-    alignItems: 'center',
-    gap: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.three,
-    maxWidth: MaxContentWidth,
+    backgroundColor: Colors.light.background,
   },
-  heroSection: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.four,
+  scrollContent: {
+    paddingBottom: 60,
   },
-  title: {
+  listHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'baseline',
+    paddingHorizontal: 20,
+    marginTop: 20,
+    marginBottom: 8,
+  },
+  listTitle: {
+    fontSize: 16,
+    color: '#121212',
+  },
+  countText: {
+    fontSize: 12,
+    color: '#6B6D66',
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    padding: 40,
+    gap: 8,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    color: '#121212',
+  },
+  emptySubtitle: {
+    fontSize: 14,
+    color: '#6B6D66',
     textAlign: 'center',
-  },
-  code: {
-    textTransform: 'uppercase',
-  },
-  stepContainer: {
-    gap: Spacing.three,
-    alignSelf: 'stretch',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.four,
-    borderRadius: Spacing.four,
   },
 });
