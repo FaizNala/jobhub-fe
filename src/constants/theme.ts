@@ -9,19 +9,47 @@ import { Platform } from 'react-native';
 
 export const Colors = {
   light: {
-    text: '#000000',
-    background: '#ffffff',
-    backgroundElement: '#F0F0F3',
-    backgroundSelected: '#E0E1E6',
-    textSecondary: '#60646C',
+    text: '#121212',
+    background: '#F8F7F2',
+    backgroundElement: '#FFFFFF',
+    backgroundSelected: '#B8F23E',
+    textSecondary: '#6B6D66',
+    primary: '#B8F23E',
+    primaryForeground: '#121212',
+    darkAnchor: '#121212',
+    border: '#ECE9DF',
+    card: '#FFFFFF',
+    // Functional category badges for JobHub
+    tagPurple: '#635BFF',
+    tagYellow: '#F5C242',
+    tagCoral: '#FF6B57',
+    tagLime: '#B8F23E',
   },
   dark: {
-    text: '#ffffff',
-    background: '#000000',
-    backgroundElement: '#212225',
-    backgroundSelected: '#2E3135',
-    textSecondary: '#B0B4BA',
+    text: '#FFFFFF',
+    background: '#0E0F10',
+    backgroundElement: '#1A1C1E',
+    backgroundSelected: '#B8F23E',
+    textSecondary: '#9E9E98',
+    primary: '#B8F23E',
+    primaryForeground: '#121212',
+    darkAnchor: '#000000',
+    border: '#26282B',
+    card: '#1A1C1E',
+    tagPurple: '#7B74FF',
+    tagYellow: '#FCD34D',
+    tagCoral: '#FF8A78',
+    tagLime: '#B8F23E',
   },
+} as const;
+
+export const Radius = {
+  xs: 6,
+  sm: 10,
+  md: 16,
+  lg: 24,
+  xl: 32,
+  full: 9999,
 } as const;
 
 export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
