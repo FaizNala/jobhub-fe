@@ -18,10 +18,11 @@ globs: "**/*"
   - `eas-app-stores`, `eas-hosting`, `eas-update`, `eas-workflows`.
 - Remote Expo MCP Server is configured at `https://mcp.expo.dev/mcp` for live docs, build logs, and simulator control.
 
-## 2. Package Management & Dependencies
-- **ALWAYS** install packages using `npx expo install <package>`. Never use raw `npm/yarn/pnpm/bun add` for libraries with native components.
-- Run `npx expo-doctor` to audit dependencies.
-- Fix version conflicts using `npx expo install --fix`.
+## 2. Package Management & Dependencies (Bun)
+- This project uses **Bun** (`bun.lock` present).
+- **ALWAYS** install packages using `bun expo install <package>`. Never use raw `bun add` or `npm install` for libraries with native components.
+- Run `bunx expo-doctor` to audit dependencies.
+- Fix version conflicts using `bun expo install --fix`.
 
 ## 3. Continuous Native Generation (CNG)
 - Do NOT create, track, or edit `android/` and `ios/` folders manually in git.

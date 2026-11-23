@@ -42,18 +42,20 @@ The Expo MCP server is configured in `.mcp.json` and `.cursor/mcp.json`:
 
 ---
 
-## 📋 Essential Commands
+## 📋 Essential Commands (Bun Active)
+
+This project uses **Bun** as its package manager and script runner (`bun.lock` present).
 
 ```bash
-npx expo install <package>  # ALWAYS use instead of npm/yarn/pnpm/bun add — resolves SDK-compatible versions
-npx expo start              # Start the local development server (Metro bundler)
-npx expo start --android    # Run on Android emulator / device
-npx expo start --ios        # Run on iOS simulator (macOS required)
-npx expo start --web        # Run in browser
-npx expo lint               # Run linter
-npx tsc --noEmit            # TypeScript type check
-npx expo-doctor             # Diagnose dependency and configuration health
-npx expo install --fix      # Fix incompatible package versions
+bun expo install <package>  # ALWAYS use to install dependencies — resolves SDK-compatible versions
+bun expo start              # Start the local development server (Metro bundler)
+bun run android             # Run on Android emulator / device
+bun run ios                 # Run on iOS simulator (macOS required)
+bun run web                 # Run in browser
+bun run lint                # Run linter
+bunx tsc --noEmit           # TypeScript type check
+bunx expo-doctor            # Diagnose dependency and configuration health
+bun expo install --fix      # Fix incompatible package versions
 ```
 
 ---
