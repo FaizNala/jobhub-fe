@@ -13,7 +13,12 @@ SplashScreen.preventAutoHideAsync().catch(() => {});
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   const pathname = usePathname();
-  const isAuthScreen = pathname === '/login' || pathname === '/register' || pathname === '/auth';
+  const isExcludedFromDock =
+    pathname === '/login' ||
+    pathname === '/register' ||
+    pathname === '/auth' ||
+    pathname === '/onboarding' ||
+    pathname === '/setup-profile';
   const [isSplashActive, setIsSplashActive] = useState(true);
 
   useEffect(() => {
@@ -39,8 +44,10 @@ export default function RootLayout() {
           <Stack.Screen name="explore" />
           <Stack.Screen name="login" />
           <Stack.Screen name="register" />
+          <Stack.Screen name="onboarding" />
+          <Stack.Screen name="setup-profile" />
         </Stack>
-        {!isAuthScreen && <FloatingDock />}
+        {!isExcludedFromDock && <FloatingDock />}
         <NetworkErrorModal />
 
         {/* Minimalist Anti-Slop Splash Screen (Option B) */}

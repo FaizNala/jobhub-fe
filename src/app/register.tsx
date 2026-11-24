@@ -35,11 +35,11 @@ export default function RegisterScreen() {
     setIsLoading(true);
     setErrorMessage(null);
 
-    // Direct authentic handshake
+    // Direct authentic handshake -> Proceed to Profile Setup Wizard
     setTimeout(() => {
       setIsLoading(false);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-      router.replace('/');
+      router.replace('/setup-profile');
     }, 350);
   };
 

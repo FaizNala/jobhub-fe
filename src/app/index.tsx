@@ -13,6 +13,7 @@ import {
   JobDetailModal,
   DossierReadinessCard,
 } from '@/modules/jobs';
+import { useOnboardingStore } from '@/modules/onboarding';
 
 export default function HomeScreen() {
   const {
@@ -23,6 +24,7 @@ export default function HomeScreen() {
     refresh,
   } = useJobs();
 
+  const candidateProfile = useOnboardingStore((state) => state.candidateProfile);
   const [isDailyMatchVisible, setIsDailyMatchVisible] = useState(false);
 
   return (
@@ -30,7 +32,10 @@ export default function HomeScreen() {
       <StatusBar style="dark" />
 
       {/* 1. Header: Candidate Greeting & Active Radar Status */}
-      <ExploreHeader candidateName="Michel Clark" />
+      <ExploreHeader
+        candidateName="Michel Clark"
+        candidateRole={candidateProfile.role}
+      />
 
       {/* 2. Main Executive Gateway Dashboard */}
       <ScrollView
