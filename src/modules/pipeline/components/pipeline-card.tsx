@@ -1,12 +1,101 @@
 import React from 'react';
-import { View, StyleSheet, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { MapPin, Calendar, ArrowRight, FileText } from 'lucide-react-native';
+import Svg, { Circle } from 'react-native-svg';
 import { PipelineItem, PipelineStage } from '../pipeline.types';
 import { Job } from '@/modules/jobs/jobs.types';
 import { Heading, Body, Label } from '@/components/atoms/typography';
 import { CompanyLogo } from '@/components/atoms/company-logo';
 import { Radius } from '@/constants/theme';
+
+interface CircularScoreRingProps {
+  score: number;
+  size?: number;
+}
+
+function getScoreColorMeta(score: number) {
+  if (score >= 90) {
+    return {
+      stroke: '#38A100', // vibrant bright lime-green
+      track: '#E2F7BE', // light lime track
+      fill: '#F4FDE8', // radiant soft lime glow inside
+      textColor: '#1E4600', // crisp high-contrast green
+      statusText: 'Top Match',
+      statusColor: '#257000',
+    };
+  }
+  if (score >= 80) {
+    return {
+      stroke: '#16A34A', // vibrant emerald green
+      track: '#DCFCE7', // mint track
+      fill: '#F0FDF4', // mint glow inside
+      textColor: '#14532D',
+      statusText: 'Strong Fit',
+      statusColor: '#15803D',
+    };
+  }
+  if (score >= 70) {
+    return {
+      stroke: '#0284C7', // vivid sky blue
+      track: '#E0F2FE',
+      fill: '#F0F9FF',
+      textColor: '#0369A1',
+      statusText: 'Good Match',
+      statusColor: '#0284C7',
+    };
+  }
+  return {
+    stroke: '#D97706', // warm amber
+    track: '#FEF3C7',
+    fill: '#FFFBEB',
+    textColor: '#92400E',
+    statusText: 'Moderate Fit',
+    statusColor: '#B45309',
+  };
+}
+
+function CircularScoreRing({ score, size = 36 }: CircularScoreRingProps) {
+  const strokeWidth = 3.2;
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const progress = Math.min(Math.max(score, 0), 100);
+  const strokeDashoffset = circumference - (progress / 100) * circumference;
+
+  const meta = getScoreColorMeta(score);
+
+  return (
+    <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
+      <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        <Circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          stroke={meta.track}
+          strokeWidth={strokeWidth}
+          fill={meta.fill}
+        />
+        <Circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          stroke={meta.stroke}
+          strokeWidth={strokeWidth}
+          strokeDasharray={`${circumference} ${circumference}`}
+          strokeDashoffset={strokeDashoffset}
+          strokeLinecap="round"
+          fill="none"
+          transform={`rotate(-90 ${size / 2} ${size / 2})`}
+        />
+      </Svg>
+      <View style={StyleSheet.absoluteFill} pointerEvents="none">
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+          <Text style={[styles.wheelScoreText, { color: meta.textColor }]}>{score}%</Text>
+        </View>
+      </View>
+    </View>
+  );
+}
 
 interface PipelineCardProps {
   item: PipelineItem;
@@ -64,9 +153,9 @@ export function PipelineCard({
         {/* Top Header: Brand Logo + Titles + Stage Badge */}
         <View style={styles.topRow}>
           <View style={styles.headerLeft}>
-            <CompanyLogo company={job.company} size={38} />
+            <CompanyLogo company={job.company} size={40} />
             <View style={styles.titleColumn}>
-              <Heading style={styles.jobTitle} numberOfLines={1}>
+              <Heading style={styles.jobTitle} numberOfLines={2}>
                 {job.title}
               </Heading>
               <View style={styles.companyRow}>
@@ -77,10 +166,12 @@ export function PipelineCard({
                   {job.location}
                 </Body>
               </View>
+              {/* Salary directly under company and location */}
+              <Body style={styles.salaryText}>{job.salary}</Body>
             </View>
           </View>
 
-          {/* Current Stage Pill */}
+          {/* Right: Dedicated Application Stage Status Pill */}
           <View
             style={[
               styles.stageBadge,
@@ -120,9 +211,25 @@ export function PipelineCard({
         ) : null}
       </Pressable>
 
-      {/* Card Action Footer: Dedicated Progress Update Button */}
+      {/* Card Action Footer: Circular Match Score Wheel & Stage Action Button */}
       <View style={styles.cardFooter}>
-        <Body style={styles.salaryText}>{job.salary}</Body>
+        {item.atsScore ? (
+          <View style={styles.matchScoreWheelGroup}>
+            <CircularScoreRing score={item.atsScore} size={36} />
+            <View style={styles.scoreTextGroup}>
+              <Label style={styles.scoreLabelText}>CV MATCH</Label>
+              <Text
+                style={[
+                  styles.scoreSublabelText,
+                  { color: getScoreColorMeta(item.atsScore).statusColor },
+                ]}>
+                ● {getScoreColorMeta(item.atsScore).statusText}
+              </Text>
+            </View>
+          </View>
+        ) : (
+          <View />
+        )}
 
         <Pressable
           onPress={handleStageAction}
@@ -170,7 +277,7 @@ const styles = StyleSheet.create({
   },
   headerLeft: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: 12,
     flex: 1,
   },
@@ -188,6 +295,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
     marginTop: 2,
+    flexWrap: 'wrap',
   },
   companyName: {
     fontSize: 12,
@@ -204,11 +312,18 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#5A5D54',
   },
+  salaryText: {
+    fontSize: 12.5,
+    fontWeight: '700',
+    color: '#121212',
+    marginTop: 3,
+  },
   stageBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingHorizontal: 9,
+    paddingVertical: 4.5,
     borderRadius: 6,
     borderWidth: 1,
+    alignSelf: 'flex-start',
   },
   stageBadgeText: {
     fontSize: 10,
@@ -254,10 +369,29 @@ const styles = StyleSheet.create({
     borderTopColor: '#F0F3E9',
     paddingTop: 12,
   },
-  salaryText: {
-    fontSize: 13,
-    fontWeight: '700',
+  matchScoreWheelGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  scoreTextGroup: {
+    justifyContent: 'center',
+  },
+  scoreLabelText: {
+    fontSize: 10,
+    fontWeight: '800',
     color: '#121212',
+    letterSpacing: 0.5,
+  },
+  scoreSublabelText: {
+    fontSize: 9.5,
+    fontWeight: '700',
+    marginTop: 1,
+  },
+  wheelScoreText: {
+    fontSize: 9.5,
+    fontWeight: '800',
+    letterSpacing: -0.4,
   },
   advanceButton: {
     height: 36,

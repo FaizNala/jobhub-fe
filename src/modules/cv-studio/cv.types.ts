@@ -3,14 +3,71 @@ export interface WorkExperience {
   company: string;
   role: string;
   period: string;
+  location?: string;
   highlights: string[];
+}
+
+export interface ProjectItem {
+  id: string;
+  name: string;
+  role: string;
+  period: string;
+  techStack: string[];
+  description?: string;
+  overview?: string;
+  highlights: string[];
+  url?: string;
+}
+
+export interface OrganizationItem {
+  id: string;
+  organization: string;
+  role: string;
+  period: string;
+  description: string;
+  highlights?: string[];
 }
 
 export interface Education {
   id: string;
   school: string;
   degree: string;
+  field?: string;
   year: string;
+  gpa?: string;
+  highlights?: string[];
+}
+
+export interface CertificationItem {
+  id: string;
+  name: string;
+  issuer: string;
+  issueDate: string;
+  credentialUrl?: string;
+}
+
+export interface ContactInfo {
+  email: string;
+  phone?: string;
+  location: string;
+  portfolio?: string;
+  github?: string;
+  linkedin?: string;
+}
+
+export interface CvAuditItem {
+  type: 'strength' | 'warning' | 'tip';
+  section: string;
+  message: string;
+  suggestion?: string;
+}
+
+export interface CvHealthMetrics {
+  score: number; // 0 - 100
+  level: 'Needs Polish' | 'Good' | 'Strong' | 'Executive Ready';
+  completedSections: number;
+  totalSections: number;
+  auditItems: CvAuditItem[];
 }
 
 export type WorkModelType = 'Remote' | 'Hybrid' | 'On-Site';
@@ -28,10 +85,16 @@ export interface CandidateProfile {
   headline: string;
   summary: string;
   location: string;
+  contact?: ContactInfo;
   preferences?: JobPreferences;
-  skills: string[];
+  skills: string[]; // aggregate legacy
+  hardSkills: string[];
+  softSkills: string[];
   experiences: WorkExperience[];
+  projects: ProjectItem[];
+  organizations: OrganizationItem[];
   education: Education[];
+  certifications: CertificationItem[];
   updatedAt: number;
 }
 

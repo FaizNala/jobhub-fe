@@ -1,6 +1,13 @@
-import { useState, useEffect, useCallback } from 'react';
-import { cvService } from './cv.service';
-import { CandidateProfile, ATSMatchResult, UpdateProfileDto } from './cv.types';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { cvService, calculateCvHealth } from './cv.service';
+import { CandidateProfile, ATSMatchResult, UpdateProfileDto, CvHealthMetrics } from './cv.types';
+
+export function useCvHealth(profile: CandidateProfile | null): CvHealthMetrics | null {
+  return useMemo(() => {
+    if (!profile) return null;
+    return calculateCvHealth(profile);
+  }, [profile]);
+}
 
 export function useCandidateProfile() {
   const [profile, setProfile] = useState<CandidateProfile | null>(null);
