@@ -81,6 +81,19 @@ export function CompanyLogo({ company, size = 44 }: CompanyLogoProps) {
     );
   }
 
+  if (norm.includes('stripe')) {
+    return (
+      <View style={[styles.container, { width: size, height: size, backgroundColor: '#635BFF' }]}>
+        <Svg width={size * 0.55} height={size * 0.55} viewBox="0 0 24 24" fill="none">
+          <Path
+            d="M13.976 9.15c-2.172-.806-3.356-1.426-3.356-2.409 0-.831.683-1.305 1.901-1.305 2.227 0 4.515.858 6.09 1.631l.89-5.494C17.652.71 14.996 0 12.193 0 6.643 0 2.87 2.836 2.87 7.502c0 4.887 4.195 6.059 7.64 7.29 2.198.784 3.01 1.488 3.01 2.477 0 .979-.867 1.5-2.28 1.5-2.278 0-5.188-1.077-7.23-2.193l-.934 5.568c2.298 1.258 5.767 1.856 8.79 1.856 5.867 0 9.874-2.738 9.874-7.618 0-4.99-4.22-6.208-7.854-7.382z"
+            fill="#FFFFFF"
+          />
+        </Svg>
+      </View>
+    );
+  }
+
   if (norm.includes('google')) {
     return (
       <View style={[styles.container, { width: size, height: size, backgroundColor: '#FFFFFF', borderColor: '#E5E8DE', borderWidth: 1 }]}>

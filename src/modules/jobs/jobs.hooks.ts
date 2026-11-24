@@ -5,6 +5,7 @@ import { Job, JobCategory, GetJobsQuery, CreateJobDto, UpdateJobDto } from './jo
 export function useJobs(initialCategory: JobCategory = 'all') {
   const [data, setData] = useState<Job[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<JobCategory>(initialCategory);
+  const [searchQuery, setSearchQuery] = useState<string>('');
   const [activeJob, setActiveJob] = useState<Job | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -81,11 +82,17 @@ export function useJobs(initialCategory: JobCategory = 'all') {
     }
   }, [activeJob]);
 
+  // Handle search change
+  const handleSearchChange = useCallback((query: string) => {
+    setSearchQuery(query);
+    getAll({ category: selectedCategory, search: query });
+  }, [getAll, selectedCategory]);
+
   // Handle category change
   const handleCategoryChange = useCallback((category: JobCategory) => {
     setSelectedCategory(category);
-    getAll({ category });
-  }, [getAll]);
+    getAll({ category, search: searchQuery });
+  }, [getAll, searchQuery]);
 
   // Initial fetch
   useEffect(() => {
@@ -96,6 +103,7 @@ export function useJobs(initialCategory: JobCategory = 'all') {
     data,
     jobs: data, // convenience alias
     selectedCategory,
+    searchQuery,
     activeJob,
     isLoading,
     error,
@@ -105,7 +113,8 @@ export function useJobs(initialCategory: JobCategory = 'all') {
     update,
     remove,
     setSelectedCategory: handleCategoryChange,
+    setSearchQuery: handleSearchChange,
     setActiveJob,
-    refresh: () => getAll({ category: selectedCategory }),
+    refresh: () => getAll({ category: selectedCategory, search: searchQuery }),
   };
 }

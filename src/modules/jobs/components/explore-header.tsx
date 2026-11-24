@@ -1,61 +1,32 @@
 import React from 'react';
-import { View, StyleSheet, Pressable } from 'react-native';
-import { SlidersHorizontal, Search } from 'lucide-react-native';
-import * as Haptics from 'expo-haptics';
-import { Colors, Radius } from '@/constants/theme';
-import { Display, Body, Label } from '@/components/atoms/typography';
+import { View, StyleSheet } from 'react-native';
+import { Heading, Label } from '@/components/atoms/typography';
 import { CandidateAvatar } from '@/components/atoms/candidate-avatar';
+import { Radius } from '@/constants/theme';
 
 interface ExploreHeaderProps {
-  onPressFilter?: () => void;
-  onPressSearch?: () => void;
+  candidateName?: string;
+  candidateRole?: string;
 }
 
-export function ExploreHeader({ onPressFilter, onPressSearch }: ExploreHeaderProps) {
-  const handleFilterPress = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-    if (onPressFilter) onPressFilter();
-  };
-
-  const handleSearchPress = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-    if (onPressSearch) onPressSearch();
-  };
-
+export function ExploreHeader({
+  candidateName = 'Michel Clark',
+  candidateRole = 'Software Engineer',
+}: ExploreHeaderProps) {
   return (
     <View style={styles.container}>
-      {/* Top Candidate Row with Real SVG Avatar */}
       <View style={styles.userRow}>
-        <CandidateAvatar size={44} />
+        <CandidateAvatar size={42} />
 
         <View style={styles.userInfo}>
-          <Label style={styles.userName}>Michel Clark</Label>
-          <Body style={styles.userRole}>Software Engineer</Body>
+          <Label style={styles.greetingText}>Good morning</Label>
+          <Heading style={styles.userName}>{candidateName}</Heading>
         </View>
 
-        <Pressable
-          onPress={handleSearchPress}
-          accessibilityRole="button"
-          accessibilityLabel="Search positions"
-          style={styles.searchIconButton}>
-          <Search size={18} color="#121212" strokeWidth={2.2} />
-        </Pressable>
-      </View>
-
-      {/* Main Title & Filter Trigger */}
-      <View style={styles.titleRow}>
-        <Display style={styles.heroText}>
-          EXPLORE{'\n'}VACANCIES
-        </Display>
-
-        <Pressable
-          onPress={handleFilterPress}
-          accessibilityRole="button"
-          accessibilityLabel="Open filters"
-          style={styles.filterButton}>
-          <SlidersHorizontal size={14} color="#121212" strokeWidth={2.2} />
-          <Label style={styles.filterText}>Filters</Label>
-        </Pressable>
+        <View style={styles.statusPill}>
+          <View style={styles.pulseDot} />
+          <Label style={styles.statusText}>Actively Looking</Label>
+        </View>
       </View>
     </View>
   );
@@ -64,9 +35,8 @@ export function ExploreHeader({ onPressFilter, onPressSearch }: ExploreHeaderPro
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 16,
-    gap: 16,
+    paddingTop: 10,
+    paddingBottom: 10,
   },
   userRow: {
     flexDirection: 'row',
@@ -76,61 +46,40 @@ const styles = StyleSheet.create({
   userInfo: {
     flex: 1,
   },
-  userName: {
-    fontSize: 15,
-    color: '#121212',
-    fontWeight: '700',
-  },
-  userRole: {
+  greetingText: {
     fontSize: 12,
+    fontWeight: '600',
     color: '#5A5D54',
+    letterSpacing: 0.1,
   },
-  searchIconButton: {
-    width: 44,
-    height: 44,
-    borderRadius: Radius.full,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: Colors.light.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    justifyContent: 'space-between',
-  },
-  heroText: {
-    fontSize: 28,
-    lineHeight: 32,
+  userName: {
+    fontSize: 19,
+    fontWeight: '800',
     color: '#121212',
-    fontWeight: '900',
-    letterSpacing: -0.8,
+    letterSpacing: -0.4,
+    marginTop: 1,
   },
-  filterButton: {
+  statusPill: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    height: 38,
-    paddingHorizontal: 14,
-    borderRadius: Radius.full,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F4F7EE',
     borderWidth: 1,
-    borderColor: Colors.light.border,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 6,
-    elevation: 2,
+    borderColor: '#E2E8D8',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: Radius.pill,
   },
-  filterText: {
-    fontSize: 13,
-    color: '#121212',
-    fontWeight: '600',
+  pulseDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#16A34A',
+  },
+  statusText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#274E13',
+    letterSpacing: 0.2,
   },
 });

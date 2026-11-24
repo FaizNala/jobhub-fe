@@ -1,68 +1,90 @@
-import React from 'react';
-import { View, ScrollView, StyleSheet } from 'react-native';
+import React, { useState } from 'react';
+import { StyleSheet, ScrollView, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { Colors } from '@/constants/theme';
-import { Heading, Body } from '@/components/atoms/typography';
 import {
   useJobs,
-  BentoJobCard,
-  FilterPillBar,
-  JobDetailModal,
   ExploreHeader,
+  CareerPulseCard,
+  MiniAppGateway,
+  DailyMatchHeroBanner,
+  DailyMatchModal,
+  JobDetailModal,
+  DossierReadinessCard,
 } from '@/modules/jobs';
 
 export default function HomeScreen() {
   const {
     jobs,
-    selectedCategory,
     activeJob,
-    setSelectedCategory,
+    isLoading,
     setActiveJob,
+    refresh,
   } = useJobs();
+
+  const [isDailyMatchVisible, setIsDailyMatchVisible] = useState(false);
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
       <StatusBar style="dark" />
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}>
-        {/* Header Section */}
-        <ExploreHeader />
+      {/* 1. Header: Candidate Greeting & Active Radar Status */}
+      <ExploreHeader candidateName="Michel Clark" />
 
-        {/* Category Filter Pills */}
-        <FilterPillBar
-          selectedCategory={selectedCategory}
-          onSelectCategory={setSelectedCategory}
+      {/* 2. Main Executive Gateway Dashboard */}
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isLoading}
+            onRefresh={() => {
+              refresh();
+            }}
+            tintColor="#38A100"
+            colors={['#38A100']}
+          />
+        }>
+        {/* Section A: Daily Match Hero Spotlight (Dark Obsidian Card) */}
+        <DailyMatchHeroBanner
+          count={5}
+          topRole="Senior Mobile Engineer"
+          topCompany="Stripe"
+          topScore={94}
+          topSalary="$145k - $175k / yr"
+          topLocation="San Francisco, CA"
+          topWorkplace="Remote"
+          onOpenDeck={() => setIsDailyMatchVisible(true)}
         />
 
-        {/* Vacancies Count Subtitle */}
-        <View style={styles.listHeader}>
-          <Heading style={styles.listTitle}>Featured Openings</Heading>
-          <Body style={styles.countText}>{jobs.length} Positions Available</Body>
-        </View>
+        {/* Section B: Compact Quick-Action Rail (Career Launchpad) */}
+        <MiniAppGateway
+          onOpenDailyMatch={() => setIsDailyMatchVisible(true)}
+          unreviewedMatchCount={5}
+        />
 
-        {/* Bento Job Cards List */}
-        {jobs.map(job => (
-          <BentoJobCard
-            key={job.id}
-            job={job}
-            onPress={selected => setActiveJob(selected)}
-          />
-        ))}
+        {/* Section C: Actionable Career Intelligence (Activity & Radar Pulse) */}
+        <CareerPulseCard
+          nextInterviewCompany="Uber"
+          nextInterviewStage="Technical Deep Dive"
+          nextInterviewTime="Thursday, 2:00 PM"
+          hunterDiscoveredCount={12}
+        />
 
-        {jobs.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <Heading style={styles.emptyTitle}>No Vacancies Found</Heading>
-            <Body style={styles.emptySubtitle}>
-              Try selecting a different filter category above.
-            </Body>
-          </View>
-        ) : null}
+        {/* Section D: Dossier & ATS Readiness */}
+        <DossierReadinessCard />
       </ScrollView>
 
-      {/* Interactive Detail & Interview Stages Modal */}
+      {/* 3. Interactive Daily Match Deck Modal (Mini-App Triage Experience) */}
+      <DailyMatchModal
+        visible={isDailyMatchVisible}
+        onClose={() => setIsDailyMatchVisible(false)}
+        jobs={jobs}
+      />
+
+      {/* 4. Single Job Detail Modal */}
       <JobDetailModal
         job={activeJob}
         visible={Boolean(activeJob)}
@@ -77,40 +99,12 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.light.background,
   },
+  scrollView: {
+    flex: 1,
+  },
   scrollContent: {
-    paddingBottom: 110, // Gives ample space above floating dock
-  },
-  listHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'baseline',
-    paddingHorizontal: 20,
-    marginTop: 20,
-    marginBottom: 8,
-  },
-  listTitle: {
-    fontSize: 16,
-    color: '#121212',
-    fontWeight: '700',
-  },
-  countText: {
-    fontSize: 12,
-    color: '#5A5D54',
-    fontWeight: '500',
-  },
-  emptyContainer: {
-    padding: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  emptyTitle: {
-    fontSize: 16,
-    color: '#121212',
-    marginBottom: 8,
-  },
-  emptySubtitle: {
-    fontSize: 13,
-    color: '#5A5D54',
-    textAlign: 'center',
+    paddingTop: 4,
+    paddingBottom: 110, // Breathing space so FloatingDock never overlaps
+    gap: 14,
   },
 });
