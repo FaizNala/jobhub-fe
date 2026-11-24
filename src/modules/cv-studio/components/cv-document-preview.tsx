@@ -69,18 +69,26 @@ export const CvDocumentPreview: React.FC<CvDocumentPreviewProps> = ({ profile })
         ) : null}
 
         {/* Section: Skills & Competencies */}
-        <View style={styles.section}>
-          <Heading style={styles.sectionHeading}>TECHNICAL & PROFESSIONAL SKILLS</Heading>
-          <View style={styles.rule} />
-          <View style={styles.skillRow}>
-            <Body style={styles.skillLabel}>Technical Skills:</Body>
-            <Body style={styles.skillList}>{profile.hardSkills.join(', ')}</Body>
+        {(profile.hardSkills?.length > 0 || profile.softSkills?.length > 0 || (profile.skills && profile.skills.length > 0)) ? (
+          <View style={styles.section}>
+            <Heading style={styles.sectionHeading}>TECHNICAL & PROFESSIONAL SKILLS</Heading>
+            <View style={styles.rule} />
+            {(profile.hardSkills?.length > 0 || (profile.skills && profile.skills.length > 0)) ? (
+              <View style={styles.skillRow}>
+                <Body style={styles.skillLabel}>Technical Skills:</Body>
+                <Body style={styles.skillList}>
+                  {(profile.hardSkills?.length > 0 ? profile.hardSkills : profile.skills || []).join(', ')}
+                </Body>
+              </View>
+            ) : null}
+            {profile.softSkills?.length > 0 ? (
+              <View style={styles.skillRow}>
+                <Body style={styles.skillLabel}>Soft Skills:</Body>
+                <Body style={styles.skillList}>{profile.softSkills.join(', ')}</Body>
+              </View>
+            ) : null}
           </View>
-          <View style={styles.skillRow}>
-            <Body style={styles.skillLabel}>Soft Skills:</Body>
-            <Body style={styles.skillList}>{profile.softSkills.join(', ')}</Body>
-          </View>
-        </View>
+        ) : null}
 
         {/* Section: Work Experience */}
         {profile.experiences && profile.experiences.length > 0 ? (
@@ -136,12 +144,6 @@ export const CvDocumentPreview: React.FC<CvDocumentPreviewProps> = ({ profile })
                   </Body>
                 ) : null}
 
-                {proj.overview || proj.description ? (
-                  <Body style={styles.bodyText}>
-                    {proj.overview || proj.description}
-                  </Body>
-                ) : null}
-
                 {proj.highlights?.length > 0 ? (
                   <View style={styles.bulletsWrap}>
                     {proj.highlights.map((h, i) => (
@@ -151,6 +153,10 @@ export const CvDocumentPreview: React.FC<CvDocumentPreviewProps> = ({ profile })
                       </View>
                     ))}
                   </View>
+                ) : proj.overview || proj.description ? (
+                  <Body style={styles.bodyText}>
+                    {proj.overview || proj.description}
+                  </Body>
                 ) : null}
               </View>
             ))}

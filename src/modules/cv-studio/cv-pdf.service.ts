@@ -129,11 +129,18 @@ export function generateResumeHtml(profile: CandidateProfile): string {
     <div style="font-size: 9pt; color: #2B2E28;">${profile.summary}</div>
   </div>` : ''}
 
+  ${(profile.hardSkills?.length > 0 || profile.softSkills?.length > 0 || (profile.skills && profile.skills.length > 0)) ? `
   <div class="section">
     <div class="section-title">Technical & Professional Skills</div>
-    <div class="skills-row"><span class="skills-label">Technical Skills:</span> ${profile.hardSkills.join(', ')}</div>
-    <div class="skills-row"><span class="skills-label">Soft Skills:</span> ${profile.softSkills.join(', ')}</div>
-  </div>
+    ${(profile.hardSkills && profile.hardSkills.length > 0) ? `
+      <div class="skills-row"><span class="skills-label">Technical Skills:</span> ${profile.hardSkills.join(', ')}</div>
+    ` : (profile.skills && profile.skills.length > 0) ? `
+      <div class="skills-row"><span class="skills-label">Technical Skills:</span> ${profile.skills.join(', ')}</div>
+    ` : ''}
+    ${(profile.softSkills && profile.softSkills.length > 0) ? `
+      <div class="skills-row"><span class="skills-label">Soft Skills:</span> ${profile.softSkills.join(', ')}</div>
+    ` : ''}
+  </div>` : ''}
 
   ${profile.experiences && profile.experiences.length > 0 ? `
   <div class="section">
@@ -159,19 +166,16 @@ export function generateResumeHtml(profile: CandidateProfile): string {
 
   ${profile.projects && profile.projects.length > 0 ? `
   <div class="section">
-    <div class="section-title">Featured Projects</div>
+    <div class="section-title">Projects</div>
     ${profile.projects.map(p => `
       <div style="margin-bottom: 8px;">
         <div class="row-split">
           <span class="role-title">${p.name}</span>
           <span class="period">${p.period}</span>
         </div>
-        <div class="row-split">
-          <span class="subtitle">${p.role}</span>
-          <span class="period">${p.url || ''}</span>
-        </div>
+        <div class="subtitle">${p.role}</div>
         ${p.techStack && p.techStack.length > 0 ? `
-          <div style="font-size: 8pt; color: #555; margin-bottom: 2px;">Stack: ${p.techStack.join(', ')}</div>
+          <div style="font-size: 8pt; color: #555; margin-bottom: 2px;">Technologies: ${p.techStack.join(', ')}</div>
         ` : ''}
         ${p.highlights && p.highlights.length > 0 ? `
           <ul>
@@ -184,7 +188,7 @@ export function generateResumeHtml(profile: CandidateProfile): string {
 
   ${profile.organizations && profile.organizations.length > 0 ? `
   <div class="section">
-    <div class="section-title">Leadership & Community</div>
+    <div class="section-title">Leadership & Organizations</div>
     ${profile.organizations.map(o => `
       <div style="margin-bottom: 8px;">
         <div class="row-split">
@@ -203,7 +207,7 @@ export function generateResumeHtml(profile: CandidateProfile): string {
 
   ${profile.education && profile.education.length > 0 ? `
   <div class="section">
-    <div class="section-title">Formal Education</div>
+    <div class="section-title">Education</div>
     ${profile.education.map(ed => `
       <div style="margin-bottom: 8px;">
         <div class="row-split">
