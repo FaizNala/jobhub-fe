@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { View, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { router } from 'expo-router';
+import * as Haptics from 'expo-haptics';
 import {
   User,
   ShieldCheck,
@@ -16,6 +17,7 @@ import {
   ArrowRight,
   TrendingUp,
   Sliders,
+  LogOut,
 } from 'lucide-react-native';
 import { Colors, Radius } from '@/constants/theme';
 import { Display, Heading, Body, Label } from '@/components/atoms/typography';
@@ -26,10 +28,16 @@ import { usePipeline } from '@/modules/pipeline';
 
 export default function ProfileScreen() {
   const { profile, updateProfile } = useCandidateProfile();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const { countsByStage } = usePipeline();
 
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+
+  const handleSignOut = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    await logout();
+    router.replace('/login' as any);
+  };
 
   const displayName = profile?.fullName || user?.name || 'Alex Vance';
   const displayRole = profile?.headline || 'Senior Mobile Engineer & Systems Architect';
@@ -255,6 +263,20 @@ export default function ProfileScreen() {
               <ArrowRight size={16} color="#B8F23E" />
             </TouchableOpacity>
           </View>
+        </View>
+
+        {/* Section: Session / Sign out */}
+        <View style={styles.signOutSection}>
+          <TouchableOpacity
+            onPress={handleSignOut}
+            activeOpacity={0.75}
+            style={styles.signOutButton}
+            accessibilityRole="button"
+            accessibilityLabel="Sign out of JobHub">
+            <LogOut size={15} color="#DC2626" strokeWidth={2} />
+            <Text style={styles.signOutText}>Sign out of JobHub</Text>
+          </TouchableOpacity>
+          <Text style={styles.buildInfoText}>JobHub v1.0.0 • Mobile Developer Career OS</Text>
         </View>
       </ScrollView>
 
@@ -585,5 +607,35 @@ const styles = StyleSheet.create({
   },
   toolSubLight: {
     color: '#C4C9BD',
+  },
+  signOutSection: {
+    paddingHorizontal: 20,
+    marginTop: 20,
+    alignItems: 'center',
+    gap: 12,
+  },
+  signOutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    width: '100%',
+    backgroundColor: '#FFF5F5',
+    borderWidth: 1.5,
+    borderColor: '#FEE2E2',
+    borderRadius: Radius.lg,
+    paddingVertical: 14,
+  },
+  signOutText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#DC2626',
+    letterSpacing: 0.2,
+  },
+  buildInfoText: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: '#9EA396',
+    letterSpacing: 0.3,
   },
 });

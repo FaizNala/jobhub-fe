@@ -1,8 +1,7 @@
 import { useEffect } from 'react';
-import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
+import { DarkTheme, DefaultTheme, ThemeProvider, usePathname, Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { View, StyleSheet, useColorScheme } from 'react-native';
-import { Stack } from 'expo-router';
 import { FloatingDock } from '@/components/organisms/floating-dock';
 import { Colors } from '@/constants/theme';
 
@@ -10,6 +9,8 @@ SplashScreen.preventAutoHideAsync().catch(() => {});
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
+  const pathname = usePathname();
+  const isAuthScreen = pathname === '/login' || pathname === '/register' || pathname === '/auth';
 
   useEffect(() => {
     SplashScreen.hideAsync().catch(() => {});
@@ -30,8 +31,10 @@ export default function RootLayout() {
           <Stack.Screen name="cv" />
           <Stack.Screen name="profile" />
           <Stack.Screen name="explore" />
+          <Stack.Screen name="login" />
+          <Stack.Screen name="register" />
         </Stack>
-        <FloatingDock />
+        {!isAuthScreen && <FloatingDock />}
       </View>
     </ThemeProvider>
   );
