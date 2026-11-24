@@ -35,7 +35,6 @@ export default function ProfileScreen() {
   const displayRole = profile?.headline || 'Senior Mobile Engineer & Systems Architect';
   const displayLocation = profile?.location || 'San Francisco, CA';
   const displayEmail = user?.email || 'alex.vance@example.com';
-  const displaySummary = profile?.summary || '';
 
   // Target Roles & Job Preferences (Multi-select)
   const targetRoles = profile?.preferences?.targetRoles ?? [
@@ -107,13 +106,6 @@ export default function ProfileScreen() {
               <Body style={styles.verifiedText}>Verified</Body>
             </View>
           </View>
-
-          {/* Professional Summary */}
-          {displaySummary ? (
-            <View style={styles.summaryContainer}>
-              <Body style={styles.summaryText}>{displaySummary}</Body>
-            </View>
-          ) : null}
         </View>
 
         {/* Section: Target Roles & Career Preferences */}
@@ -388,22 +380,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#2F4F00',
     fontWeight: '600',
-  },
-  summaryContainer: {
-    backgroundColor: '#F9FAF7',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderRadius: Radius.sm,
-    borderWidth: 1,
-    borderColor: '#E8ECDF',
-    marginTop: 12,
-    width: '100%',
-  },
-  summaryText: {
-    fontSize: 12.5,
-    lineHeight: 21,
-    color: '#343830',
-    textAlign: 'left',
   },
   section: {
     paddingHorizontal: 20,

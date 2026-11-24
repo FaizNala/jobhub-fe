@@ -31,7 +31,6 @@ export interface ProfileEditModalProps {
 const AVAILABLE_WORK_MODELS: WorkModelType[] = ['Remote', 'Hybrid', 'On-Site'];
 const ROLE_SUGGESTIONS = ['Staff Mobile Architect', 'Lead iOS Engineer', 'Senior Frontend Engineer'];
 const LOCATION_SUGGESTIONS = ['San Francisco, CA', 'Remote (US)', 'New York, NY'];
-const MAX_SUMMARY_CHARS = 500;
 
 export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
   visible,
@@ -43,7 +42,6 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
   const [fullName, setFullName] = useState(profile?.fullName ?? '');
   const [headline, setHeadline] = useState(profile?.headline ?? '');
   const [location, setLocation] = useState(profile?.location ?? '');
-  const [summary, setSummary] = useState(profile?.summary ?? '');
 
   // Target Roles (Multi-select tags)
   const [targetRoles, setTargetRoles] = useState<string[]>(
@@ -74,7 +72,6 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
       setFullName(profile.fullName);
       setHeadline(profile.headline);
       setLocation(profile.location);
-      setSummary(profile.summary);
       if (profile.preferences) {
         setTargetRoles(profile.preferences.targetRoles || []);
         setWorkModels(profile.preferences.workModels || ['Remote', 'Hybrid']);
@@ -139,7 +136,6 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
         fullName: fullName.trim(),
         headline: headline.trim(),
         location: location.trim(),
-        summary: summary.trim(),
         preferences: {
           targetRoles,
           workModels,
@@ -391,39 +387,6 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
                 />
               </View>
             </View>
-
-            {/* Section 3: Professional Summary (Generous, auto-comfortable, 500 max limit) */}
-            <View style={styles.formSection}>
-              <View style={styles.labelWithCountRow}>
-                <Label style={styles.inputLabel}>PROFESSIONAL SUMMARY</Label>
-                <Label
-                  style={[
-                    styles.charCountText,
-                    summary.length > MAX_SUMMARY_CHARS && styles.charCountWarning,
-                  ]}>
-                  {summary.length} / {MAX_SUMMARY_CHARS} CHARACTERS
-                </Label>
-              </View>
-
-              <TextInput
-                style={[styles.input, styles.textArea]}
-                value={summary}
-                onChangeText={text => {
-                  if (text.length <= MAX_SUMMARY_CHARS) {
-                    setSummary(text);
-                  }
-                }}
-                maxLength={MAX_SUMMARY_CHARS}
-                multiline
-                numberOfLines={5}
-                placeholder="Write a concise overview of your engineering trajectory, core architecture domains, and high-impact achievements (recommended 3–4 sentences, ~350-500 characters)..."
-                placeholderTextColor="#A0A59A"
-                textAlignVertical="top"
-              />
-              <Body style={styles.helperText}>
-                Industry standard: 3–4 sentences (50–70 words). Recruiter attention span averages 6 seconds per screening pass.
-              </Body>
-            </View>
           </ScrollView>
 
           {/* Action Footer */}
@@ -548,15 +511,6 @@ const styles = StyleSheet.create({
     color: '#5A5D54',
     letterSpacing: 0.4,
   },
-  charCountText: {
-    fontSize: 10,
-    color: '#8A8D84',
-    fontWeight: '600',
-  },
-  charCountWarning: {
-    color: '#B03A2E',
-    fontWeight: '800',
-  },
   helperText: {
     fontSize: 11,
     color: '#73786B',
@@ -661,11 +615,6 @@ const styles = StyleSheet.create({
   selectorPillTextActive: {
     color: '#FFFFFF',
     fontWeight: '700',
-  },
-  textArea: {
-    minHeight: 130, // Generous, comfortable multi-line space
-    lineHeight: 22,
-    paddingTop: 12,
   },
   sheetFooter: {
     paddingHorizontal: 20,
