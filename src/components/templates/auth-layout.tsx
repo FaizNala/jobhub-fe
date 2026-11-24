@@ -94,9 +94,9 @@ export function AuthLayout({
                 <View style={styles.illustrationTextGroup}>
                   <View style={styles.illustrationBadge}>
                     <Sparkles size={14} color="#121212" />
-                    <Text style={styles.illustrationBadgeText}>Built for tech engineers</Text>
+                    <Text style={styles.illustrationBadgeText}>Built for modern professionals</Text>
                   </View>
-                  <Text style={styles.illustrationTitle}>Your developer career, organized.</Text>
+                  <Text style={styles.illustrationTitle}>Your next career leap, organized.</Text>
                   <Text style={styles.illustrationSubtitle}>
                     Track applications, tailor CVs, and bypass recruiter noise.
                   </Text>

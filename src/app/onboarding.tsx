@@ -34,10 +34,10 @@ export default function OnboardingScreen() {
   const slides: SlideItem[] = [
     {
       id: 'jobs',
-      tag: 'CURATED TECH JOBS',
-      title: 'Zero noise. Only verified tech roles.',
+      tag: 'VERIFIED OPPORTUNITIES',
+      title: 'Zero noise. Only verified roles.',
       subtitle:
-        'Bypass spam and agency recruiters. Direct access to high-signal engineering positions matching your seniority and stack.',
+        'Bypass spam and agency recruiters. Direct access to high-signal professional positions matching your experience and goals.',
       illustration: (
         <OnboardingJobsIllustration
           width={isDesktop ? 340 : 290}
@@ -50,7 +50,7 @@ export default function OnboardingScreen() {
       tag: 'AUTONOMOUS AI HUNTER',
       title: 'Your personal 24/7 career agent.',
       subtitle:
-        'The agent monitors market openings around the clock, scans application pipelines, and prepares you for technical interviews.',
+        'The agent monitors market openings around the clock, tracks application pipelines, and prepares you for upcoming interviews.',
       illustration: (
         <OnboardingHunterIllustration
           width={isDesktop ? 340 : 290}
@@ -61,7 +61,7 @@ export default function OnboardingScreen() {
     {
       id: 'cv',
       tag: 'ATS-READY CV STUDIO',
-      title: 'Tailored resumes built for engineering.',
+      title: 'Tailored resumes built to get you hired.',
       subtitle:
         'Generate clean, ATS-compliant CVs tailored for each opportunity in one tap with instant Markdown and PDF export.',
       illustration: (

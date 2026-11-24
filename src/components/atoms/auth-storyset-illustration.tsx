@@ -46,7 +46,7 @@ export function AuthStorysetIllustration({ width = 420, height = 380, style }: P
         <Rect x="94" y="140" width="130" height="7" rx="3.5" fill="#E5EAE0" />
         <Rect x="94" y="158" width="80" height="7" rx="3.5" fill="#E5EAE0" />
 
-        {/* Code Tag Badge </> */}
+        {/* Professional Career Match Badge */}
         <Rect
           x="330"
           y="84"
@@ -55,26 +55,15 @@ export function AuthStorysetIllustration({ width = 420, height = 380, style }: P
           rx="8"
           fill="#1E293B"
         />
+        <Circle cx="350" cy="100" r="7" fill="#B8F23E" />
         <Path
-          d="M346 100 L341 96 L346 92"
-          stroke="#B8F23E"
-          strokeWidth="2"
+          d="M347 100 L349.5 102.5 L353.5 97.5"
+          stroke="#121212"
+          strokeWidth="1.8"
           strokeLinecap="round"
           strokeLinejoin="round"
         />
-        <Path
-          d="M364 92 L359 108"
-          stroke="#94A3B8"
-          strokeWidth="2"
-          strokeLinecap="round"
-        />
-        <Path
-          d="M372 92 L377 96 L372 100"
-          stroke="#B8F23E"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
+        <Rect x="364" y="97" width="28" height="6" rx="3" fill="#FFFFFF" />
 
         {/* Floating Checklist / Application Card (Right) */}
         <Rect

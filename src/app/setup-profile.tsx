@@ -24,12 +24,12 @@ export default function SetupProfileScreen() {
   const existingProfile = useOnboardingStore((state) => state.candidateProfile);
 
   // Form selections
-  const [selectedRole, setSelectedRole] = useState(existingProfile.role || 'Senior Mobile Engineer');
+  const [selectedRole, setSelectedRole] = useState(existingProfile.role || 'Product & Project Management');
   const [selectedSeniority, setSelectedSeniority] = useState(existingProfile.seniority || 'Senior (5-8 yrs)');
   const [selectedStack, setSelectedStack] = useState<string[]>(
     existingProfile.techStack.length > 0
       ? existingProfile.techStack
-      : ['React Native', 'TypeScript', 'Node.js']
+      : ['Project Management', 'Product Strategy', 'Data Analysis']
   );
   const [selectedWorkMode, setSelectedWorkMode] = useState<'remote' | 'hybrid' | 'onsite'>(
     existingProfile.workMode || 'remote'
@@ -37,12 +37,14 @@ export default function SetupProfileScreen() {
   const [selectedSalary, setSelectedSalary] = useState(existingProfile.targetSalary || '$145k - $175k / yr');
 
   const roles = [
-    'Senior Mobile Engineer',
-    'Frontend Engineer',
-    'Backend Engineer',
-    'Fullstack Engineer',
-    'DevOps / Cloud Engineer',
-    'AI / ML Engineer',
+    'Product & Project Management',
+    'Marketing, Brand & Growth',
+    'UI/UX & Creative Design',
+    'Sales & Business Development',
+    'Finance, Accounting & Legal',
+    'Human Resources & Operations',
+    'Software & Technology',
+    'Content & Communications',
   ];
 
   const seniorities = [
@@ -52,21 +54,22 @@ export default function SetupProfileScreen() {
     'Lead / Staff (8+ yrs)',
   ];
 
-  const techOptions = [
-    'React Native',
-    'TypeScript',
-    'React',
-    'Node.js',
-    'Go',
-    'Python',
-    'Swift',
-    'Kotlin',
-    'PostgreSQL',
-    'GraphQL',
-    'Docker',
-    'AWS',
-    'Rust',
-    'Kubernetes',
+  const skillOptions = [
+    'Project Management',
+    'Product Strategy',
+    'Digital Marketing',
+    'Data Analysis',
+    'UI/UX Design',
+    'Financial Modeling',
+    'CRM & Sales Pipeline',
+    'Brand & Creative Strategy',
+    'Content Strategy',
+    'People Operations & HR',
+    'SEO & Growth Analytics',
+    'Leadership & Strategy',
+    'Business Development',
+    'Python / SQL Data',
+    'React / Mobile Tech',
   ];
 
   const workModes = [
@@ -232,35 +235,35 @@ export default function SetupProfileScreen() {
               </View>
             )}
 
-            {/* STEP 2: Primary Tech Stack */}
+            {/* STEP 2: Core Expertise & Skills */}
             {currentStep === 2 && (
               <View style={styles.stepSection}>
-                <Text style={styles.stepTitle}>Select your core technologies</Text>
+                <Text style={styles.stepTitle}>Select your core expertise & skills</Text>
                 <Text style={styles.stepSubtitle}>
-                  Tap the frameworks and languages you want your next job to prioritize.
+                  Tap the key competencies and tools you want your next opportunity to prioritize.
                 </Text>
 
                 <View style={styles.chipGrid}>
-                  {techOptions.map((tech) => {
-                    const isSelected = selectedStack.includes(tech);
+                  {skillOptions.map((skill) => {
+                    const isSelected = selectedStack.includes(skill);
                     return (
                       <TouchableOpacity
-                        key={tech}
-                        onPress={() => toggleStack(tech)}
+                        key={skill}
+                        onPress={() => toggleStack(skill)}
                         style={[
                           styles.chip,
                           isSelected ? styles.chipSelected : styles.chipUnselected,
                         ]}
                         activeOpacity={0.8}
                         accessibilityRole="button"
-                        accessibilityLabel={tech}>
+                        accessibilityLabel={skill}>
                         {isSelected && <Check size={14} color="#B8F23E" strokeWidth={2.6} />}
                         <Text
                           style={[
                             styles.chipText,
                             isSelected ? styles.chipTextSelected : styles.chipTextUnselected,
                           ]}>
-                          {tech}
+                          {skill}
                         </Text>
                       </TouchableOpacity>
                     );

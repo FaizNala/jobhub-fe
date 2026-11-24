@@ -51,7 +51,7 @@ export default function RegisterScreen() {
   return (
     <AuthLayout
       title="Create account"
-      subtitle="Get started with clean, noise-free developer job hunting."
+      subtitle="Get started with clean, noise-free professional job hunting."
       errorMessage={errorMessage}
       switcherText="Already have an account?"
       switcherActionLabel="Sign in"

@@ -4,6 +4,7 @@ export interface CandidateProfile {
   role: string;
   seniority: string;
   techStack: string[];
+  skills?: string[];
   workMode: 'remote' | 'hybrid' | 'onsite';
   targetSalary?: string;
 }
@@ -20,9 +21,10 @@ export interface OnboardingState {
 }
 
 export const DEFAULT_CANDIDATE_PROFILE: CandidateProfile = {
-  role: 'Senior Mobile Engineer',
+  role: 'Product & Project Management',
   seniority: 'Senior (5-8 yrs)',
-  techStack: ['React Native', 'TypeScript', 'Node.js', 'PostgreSQL'],
+  techStack: ['Project Management', 'Product Strategy', 'Data Analysis', 'Leadership'],
+  skills: ['Project Management', 'Product Strategy', 'Data Analysis', 'Leadership'],
   workMode: 'remote',
   targetSalary: '$145k - $175k / yr',
 };
