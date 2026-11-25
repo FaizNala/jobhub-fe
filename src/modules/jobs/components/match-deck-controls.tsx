@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { X, BookmarkPlus, RotateCcw } from 'lucide-react-native';
 
@@ -8,6 +8,7 @@ interface MatchDeckControlsProps {
   onTrack: () => void;
   onUndo?: () => void;
   canUndo?: boolean;
+  disabled?: boolean;
 }
 
 export function MatchDeckControls({
@@ -15,57 +16,96 @@ export function MatchDeckControls({
   onTrack,
   onUndo,
   canUndo = false,
+  disabled = false,
 }: MatchDeckControlsProps) {
+  const undoDisabled = disabled || !canUndo || !onUndo;
+
   const handlePass = () => {
+    if (disabled) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     onPass();
   };
 
   const handleTrack = () => {
+    if (disabled) return;
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     onTrack();
   };
 
   const handleUndo = () => {
+    if (undoDisabled) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-    if (onUndo) onUndo();
+    onUndo();
   };
 
   return (
     <View style={styles.controlsRow}>
-      {/* Undo Button (Only if previous card exists) */}
-      {canUndo && onUndo ? (
-        <TouchableOpacity
-          onPress={handleUndo}
-          style={styles.undoBtn}
-          activeOpacity={0.8}
-          accessibilityRole="button"
-          accessibilityLabel="Undo last pass">
-          <RotateCcw size={16} color="#73786B" strokeWidth={2.2} />
-        </TouchableOpacity>
-      ) : null}
+      {/* Compact Undo Icon */}
+      <Pressable
+        onPress={handleUndo}
+        disabled={undoDisabled}
+        style={state => [
+          styles.undoBtn,
+          undoDisabled && styles.undoDisabledBtn,
+          state.pressed && !undoDisabled && styles.pressedFade,
+          Platform.OS === 'web' && (state as { focused?: boolean }).focused
+            ? styles.webFocusRing
+            : null,
+          Platform.OS === 'web'
+            ? ({ cursor: undoDisabled ? 'not-allowed' : 'pointer' } as any)
+            : null,
+        ]}
+        accessibilityRole="button"
+        accessibilityState={{ disabled: undoDisabled }}
+        accessibilityLabel="Undo last decision">
+        <RotateCcw
+          size={17}
+          color={undoDisabled ? '#9CA3AF' : '#5A5D54'}
+          strokeWidth={2.2}
+        />
+      </Pressable>
 
-      {/* Pass / Skip Button */}
-      <TouchableOpacity
+      {/* Quiet Pass Circular Button */}
+      <Pressable
         onPress={handlePass}
-        style={styles.passBtn}
-        activeOpacity={0.8}
+        disabled={disabled}
+        style={state => [
+          styles.passBtn,
+          disabled && styles.disabledBtn,
+          state.pressed && !disabled && styles.passBtnPressed,
+          Platform.OS === 'web' && (state as { focused?: boolean }).focused
+            ? styles.webFocusRing
+            : null,
+          Platform.OS === 'web'
+            ? ({ cursor: disabled ? 'not-allowed' : 'pointer' } as any)
+            : null,
+        ]}
         accessibilityRole="button"
+        accessibilityState={{ disabled }}
         accessibilityLabel="Pass this opportunity">
-        <X size={16} color="#5A5D54" strokeWidth={2.4} />
-        <Text style={styles.passText}>PASS</Text>
-      </TouchableOpacity>
+        <X size={20} color="#5A5D54" strokeWidth={2.4} />
+      </Pressable>
 
-      {/* Save to Tracker Button */}
-      <TouchableOpacity
+      {/* Quiet Obsidian Track Circular Button */}
+      <Pressable
         onPress={handleTrack}
-        style={styles.trackBtn}
-        activeOpacity={0.85}
+        disabled={disabled}
+        style={state => [
+          styles.trackBtn,
+          disabled && styles.disabledBtn,
+          state.pressed && !disabled && styles.pressedFade,
+          Platform.OS === 'web' && (state as { focused?: boolean }).focused
+            ? styles.webFocusRing
+            : null,
+          Platform.OS === 'web'
+            ? ({ cursor: disabled ? 'not-allowed' : 'pointer' } as any)
+            : null,
+        ]}
         accessibilityRole="button"
+        accessibilityState={{ disabled }}
         accessibilityLabel="Save to Tracker pipeline">
-        <BookmarkPlus size={16} color="#121212" strokeWidth={2.4} />
-        <Text style={styles.trackText}>TRACK JOB</Text>
-      </TouchableOpacity>
+        <BookmarkPlus size={20} color="#B8F23E" strokeWidth={2.3} />
+      </Pressable>
     </View>
   );
 }
@@ -75,65 +115,68 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 12,
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 8,
+    gap: 18,
+    paddingTop: 6,
+    paddingBottom: 4,
   },
+  disabledBtn: {
+    opacity: 0.5,
+  },
+  undoDisabledBtn: {
+    opacity: 0.42,
+    backgroundColor: '#F8FAF6',
+  },
+  pressedFade: {
+    opacity: 0.78,
+  },
+  webFocusRing: {
+    outlineWidth: 2,
+    outlineStyle: 'solid',
+    outlineColor: '#121212',
+    outlineOffset: 2,
+  } as any,
   undoBtn: {
-    width: 46,
-    height: 48,
-    borderRadius: 14,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: '#FFFFFF',
-    borderWidth: 1.5,
-    borderColor: '#E2E6DC',
+    borderWidth: 1,
+    borderColor: '#DCE1D5',
     alignItems: 'center',
     justifyContent: 'center',
   },
   passBtn: {
-    flex: 1,
-    height: 48,
-    borderRadius: 14,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     backgroundColor: '#FFFFFF',
     borderWidth: 1.5,
-    borderColor: '#E2E6DC',
-    flexDirection: 'row',
+    borderColor: '#DCE1D5',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.03,
-    shadowRadius: 3,
-    elevation: 1,
-  },
-  passText: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: '#5A5D54',
-    letterSpacing: 0.6,
-  },
-  trackBtn: {
-    flex: 1.4,
-    height: 48,
-    borderRadius: 14,
-    backgroundColor: '#B8F23E',
-    borderWidth: 1.5,
-    borderColor: '#98DA18',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    shadowColor: '#000000',
+    shadowColor: '#121212',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
+    shadowOpacity: 0.04,
     shadowRadius: 6,
     elevation: 2,
   },
-  trackText: {
-    fontSize: 13,
-    fontWeight: '900',
-    color: '#121212',
-    letterSpacing: 0.6,
+  passBtnPressed: {
+    backgroundColor: '#FEE2E2',
+    borderColor: '#B91C1C',
+  },
+  trackBtn: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: '#121212',
+    borderWidth: 1.5,
+    borderColor: '#121212',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#121212',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.14,
+    shadowRadius: 8,
+    elevation: 4,
   },
 });

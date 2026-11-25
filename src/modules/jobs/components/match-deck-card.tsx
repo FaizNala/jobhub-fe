@@ -1,7 +1,7 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Platform } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
-import { MapPin, Info, CheckCircle2 } from 'lucide-react-native';
+import { Info, CheckCircle2, ArrowLeftRight } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { Job } from '../jobs.types';
 import { Heading, Body, Label } from '@/components/atoms/typography';
@@ -22,10 +22,10 @@ function DeckRadialScore({ score }: { score: number }) {
   const progress = Math.min(Math.max(score, 0), 100);
   const strokeDashoffset = circumference - (progress / 100) * circumference;
 
-  const strokeColor = progress >= 90 ? '#38A100' : progress >= 80 ? '#16A34A' : '#0284C7';
+  const strokeColor = progress >= 90 ? '#2E6F00' : progress >= 80 ? '#2F4F00' : '#0369A1';
   const trackColor = progress >= 90 ? '#E2F7BE' : progress >= 80 ? '#DCFCE7' : '#E0F2FE';
   const fillColor = progress >= 90 ? '#F4FDE8' : progress >= 80 ? '#F0FDF4' : '#F0F9FF';
-  const textColor = progress >= 90 ? '#1E4600' : progress >= 80 ? '#14532D' : '#0369A1';
+  const textColor = progress >= 90 ? '#1E4600' : progress >= 80 ? '#14532D' : '#0C4A6E';
 
   return (
     <View style={styles.scoreGaugeWrapper}>
@@ -73,10 +73,14 @@ export function MatchDeckCard({
     onPressDetails(job);
   };
 
+  const focusTags = job.tags.length > 0 ? job.tags.slice(0, 2).join(' and ') : job.employmentType;
+  const stageCount = job.interviewStages?.length ?? 0;
+
   return (
     <View style={styles.cardContainer}>
       <ScrollView
         showsVerticalScrollIndicator={false}
+        nestedScrollEnabled
         contentContainerStyle={styles.cardScrollContent}>
         {/* 1 & 2. Company Logo + Role Title + Company/Location (PipelineCard layout) */}
         <View style={styles.jobHeaderGroup}>
@@ -119,21 +123,23 @@ export function MatchDeckCard({
           <View style={styles.bulletRow}>
             <CheckCircle2 size={13} color="#2F4F00" style={styles.bulletIcon} />
             <Body style={styles.bulletText}>
-              Direct ownership of production architecture with modern Expo & React Native.
+              Focuses on {focusTags} in a {job.workplaceType.toLowerCase()} {job.employmentType.toLowerCase()} setup at {job.company}.
             </Body>
           </View>
 
           <View style={styles.bulletRow}>
             <CheckCircle2 size={13} color="#2F4F00" style={styles.bulletIcon} />
             <Body style={styles.bulletText}>
-              High profile match: 94% keyword alignment with your validated CV achievements.
+              Strong profile match: {score}% alignment with your saved role preferences.
             </Body>
           </View>
 
           <View style={styles.bulletRow}>
             <CheckCircle2 size={13} color="#2F4F00" style={styles.bulletIcon} />
             <Body style={styles.bulletText}>
-              Includes competitive equity package, $3,000 learning stipend & top tier healthcare.
+              {stageCount > 0
+                ? `${stageCount}-stage interview process outlined up front with compensation ${job.salary}.`
+                : `Listed compensation range ${job.salary} based in ${job.location}.`}
             </Body>
           </View>
         </View>
@@ -149,7 +155,7 @@ export function MatchDeckCard({
                 <View key={st.stageNumber} style={styles.stageChip}>
                   <Text style={styles.stageNum}>{idx + 1}</Text>
                   <Text style={styles.stageName} numberOfLines={1}>
-                    {st.title.replace(/\s+Call|\s+Screen/i, '')}
+                    {st.title.replace(/\s+(Screening\s+Call|Screen|Call)\b/gi, '')}
                   </Text>
                 </View>
               ))}
@@ -158,15 +164,26 @@ export function MatchDeckCard({
         ) : null}
 
         {/* 7. Tap For Full Details Link */}
-        <TouchableOpacity
+        <Pressable
           onPress={handleDetailsPress}
-          style={styles.detailsLinkBtn}
-          activeOpacity={0.7}
+          style={state => [
+            styles.detailsLinkBtn,
+            state.pressed && styles.pressedFade,
+            Platform.OS === 'web' && (state as { focused?: boolean }).focused
+              ? styles.webFocusRing
+              : null,
+          ]}
           accessibilityRole="button"
           accessibilityLabel="Read full job description and requirements">
-          <Info size={13} color="#5A5D54" />
+          <Info size={14} color="#5A5D54" />
           <Text style={styles.detailsLinkText}>Tap to view full description & requirements</Text>
-        </TouchableOpacity>
+        </Pressable>
+
+        {/* 8. Gesture Affordance Cue */}
+        <View style={styles.swipeHintRow} pointerEvents="none">
+          <ArrowLeftRight size={13} color="#5A5D54" strokeWidth={2} />
+          <Text style={styles.swipeHintText}>Swipe left to pass, right to track</Text>
+        </View>
       </ScrollView>
     </View>
   );
@@ -225,7 +242,7 @@ const styles = StyleSheet.create({
   },
   locationText: {
     fontSize: 12,
-    color: '#73786B',
+    color: '#5A5D54',
     fontWeight: '500',
   },
   scoreGaugeWrapper: {
@@ -363,10 +380,36 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    paddingVertical: 6,
+    minHeight: 44,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
     marginTop: 2,
+    borderRadius: Radius.sm,
+    ...(Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : null),
   },
   detailsLinkText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#5A5D54',
+  },
+  pressedFade: {
+    opacity: 0.72,
+  },
+  webFocusRing: {
+    outlineWidth: 2,
+    outlineStyle: 'solid',
+    outlineColor: '#121212',
+    outlineOffset: 2,
+  } as any,
+  swipeHintRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingTop: 2,
+    paddingBottom: 4,
+  },
+  swipeHintText: {
     fontSize: 11.5,
     fontWeight: '600',
     color: '#5A5D54',

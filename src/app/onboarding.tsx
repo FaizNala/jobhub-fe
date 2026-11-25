@@ -5,9 +5,9 @@ import {
   StyleSheet,
   TouchableOpacity,
   useWindowDimensions,
-  SafeAreaView,
   Platform,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { ArrowRight } from 'lucide-react-native';

@@ -4,6 +4,7 @@ export * from './job-detail-modal';
 export * from './explore-header';
 export * from './stage-step-card';
 export * from './match-deck-card';
+export * from './swipeable-deck-card';
 export * from './match-deck-controls';
 export * from './match-deck-empty';
 export * from './career-pulse-card';

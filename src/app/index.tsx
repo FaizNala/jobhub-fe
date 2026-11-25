@@ -28,7 +28,6 @@ export default function HomeScreen() {
     refresh,
   } = useJobs();
 
-  const candidateProfile = useOnboardingStore((state) => state.candidateProfile);
   const [isDailyMatchVisible, setIsDailyMatchVisible] = useState(false);
 
   // First-time cold launch: redirect to onboarding once storage is hydrated
@@ -40,11 +39,8 @@ export default function HomeScreen() {
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
       <StatusBar style="dark" />
 
-      {/* 1. Header: Candidate Greeting & Active Radar Status */}
-      <ExploreHeader
-        candidateName="Michel Clark"
-        candidateRole={candidateProfile.role}
-      />
+      {/* 1. Header: Candidate Greeting */}
+      <ExploreHeader candidateName="Michel Clark" />
 
       {/* 2. Main Executive Gateway Dashboard */}
       <ScrollView

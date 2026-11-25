@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { DarkTheme, DefaultTheme, ThemeProvider, usePathname, Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { View, StyleSheet, useColorScheme } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { FloatingDock } from '@/components/organisms/floating-dock';
 import { Colors } from '@/constants/theme';
 import { NetworkListener } from '@/modules/network';
@@ -46,44 +47,49 @@ export default function RootLayout() {
   }, [setHydrated]);
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <View style={styles.rootContainer}>
-        <NetworkListener />
-        <OfflineAmbientBanner />
-        <Stack
-          screenOptions={{
-            headerShown: false,
-            contentStyle: { backgroundColor: Colors.light.background },
-            animation: 'none',
-          }}>
-          <Stack.Screen name="index" />
-          <Stack.Screen name="jobs" />
-          <Stack.Screen name="agent" />
-          <Stack.Screen name="cv" />
-          <Stack.Screen name="profile" />
-          <Stack.Screen name="explore" />
-          <Stack.Screen name="login" />
-          <Stack.Screen name="register" />
-          <Stack.Screen name="onboarding" />
-          <Stack.Screen name="setup-profile" />
-          <Stack.Screen name="auth" />
-        </Stack>
-        {!isExcludedFromDock && <FloatingDock />}
-        <NetworkErrorModal />
+    <GestureHandlerRootView style={styles.gestureRoot}>
+      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+        <View style={styles.rootContainer}>
+          <NetworkListener />
+          <OfflineAmbientBanner />
+          <Stack
+            screenOptions={{
+              headerShown: false,
+              contentStyle: { backgroundColor: Colors.light.background },
+              animation: 'none',
+            }}>
+            <Stack.Screen name="index" />
+            <Stack.Screen name="jobs" />
+            <Stack.Screen name="agent" />
+            <Stack.Screen name="cv" />
+            <Stack.Screen name="profile" />
+            <Stack.Screen name="explore" />
+            <Stack.Screen name="login" />
+            <Stack.Screen name="register" />
+            <Stack.Screen name="onboarding" />
+            <Stack.Screen name="setup-profile" />
+            <Stack.Screen name="auth" />
+          </Stack>
+          {!isExcludedFromDock && <FloatingDock />}
+          <NetworkErrorModal />
 
-        {/* Minimalist Splash Screen with Zero-Flicker Gatekeeper */}
-        {isSplashActive && (
-          <InteractiveSplashScreen
-            isReady={isHydrated}
-            onFinish={() => setIsSplashActive(false)}
-          />
-        )}
-      </View>
-    </ThemeProvider>
+          {/* Minimalist Splash Screen with Zero-Flicker Gatekeeper */}
+          {isSplashActive && (
+            <InteractiveSplashScreen
+              isReady={isHydrated}
+              onFinish={() => setIsSplashActive(false)}
+            />
+          )}
+        </View>
+      </ThemeProvider>
+    </GestureHandlerRootView>
   );
 }
 
 const styles = StyleSheet.create({
+  gestureRoot: {
+    flex: 1,
+  },
   rootContainer: {
     flex: 1,
     backgroundColor: Colors.light.background,
