@@ -51,8 +51,8 @@ export function NetworkErrorModal() {
 
           {/* Storyset Offline Character Illustration */}
           <OfflineStorysetIllustration
-            width={isDesktop ? 240 : 210}
-            height={isDesktop ? 165 : 145}
+            width={isDesktop ? 260 : 220}
+            height={isDesktop ? 185 : 160}
           />
 
           {/* Text Content */}

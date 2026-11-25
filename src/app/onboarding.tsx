@@ -40,8 +40,8 @@ export default function OnboardingScreen() {
         'Bypass spam and agency recruiters. Direct access to high-signal professional positions matching your experience and goals.',
       illustration: (
         <OnboardingJobsIllustration
-          width={isDesktop ? 340 : 290}
-          height={isDesktop ? 230 : 195}
+          width={isDesktop ? 360 : 320}
+          height={isDesktop ? 250 : 225}
         />
       ),
     },
@@ -53,8 +53,8 @@ export default function OnboardingScreen() {
         'The agent monitors market openings around the clock, tracks application pipelines, and prepares you for upcoming interviews.',
       illustration: (
         <OnboardingHunterIllustration
-          width={isDesktop ? 340 : 290}
-          height={isDesktop ? 230 : 195}
+          width={isDesktop ? 360 : 320}
+          height={isDesktop ? 250 : 225}
         />
       ),
     },
@@ -66,8 +66,8 @@ export default function OnboardingScreen() {
         'Generate clean, ATS-compliant CVs tailored for each opportunity in one tap with instant Markdown and PDF export.',
       illustration: (
         <OnboardingCvIllustration
-          width={isDesktop ? 340 : 290}
-          height={isDesktop ? 230 : 195}
+          width={isDesktop ? 360 : 320}
+          height={isDesktop ? 250 : 225}
         />
       ),
     },

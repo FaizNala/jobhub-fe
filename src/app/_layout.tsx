@@ -7,23 +7,43 @@ import { Colors } from '@/constants/theme';
 import { NetworkListener } from '@/modules/network';
 import { NetworkErrorModal, OfflineAmbientBanner } from '@/components/organisms/network-error-modal';
 import { InteractiveSplashScreen } from '@/components/organisms/interactive-splash-screen';
+import { useOnboardingStore } from '@/modules/onboarding';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   const pathname = usePathname();
+
+  const isHydrated = useOnboardingStore((state) => state.isHydrated);
+  const setHydrated = useOnboardingStore((state) => state.setHydrated);
+
+  const [isSplashActive, setIsSplashActive] = useState(true);
+
   const isExcludedFromDock =
     pathname === '/login' ||
     pathname === '/register' ||
     pathname === '/auth' ||
     pathname === '/onboarding' ||
     pathname === '/setup-profile';
-  const [isSplashActive, setIsSplashActive] = useState(true);
 
+  // 1. Hide native OS splash screen once root layout renders
   useEffect(() => {
     SplashScreen.hideAsync().catch(() => {});
   }, []);
+
+  // 2. Track Zustand store hydration state
+  useEffect(() => {
+    if (useOnboardingStore.persist.hasHydrated()) {
+      setHydrated(true);
+    }
+    const unsub = useOnboardingStore.persist.onFinishHydration(() => {
+      setHydrated(true);
+    });
+    return () => {
+      unsub();
+    };
+  }, [setHydrated]);
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
@@ -46,13 +66,17 @@ export default function RootLayout() {
           <Stack.Screen name="register" />
           <Stack.Screen name="onboarding" />
           <Stack.Screen name="setup-profile" />
+          <Stack.Screen name="auth" />
         </Stack>
         {!isExcludedFromDock && <FloatingDock />}
         <NetworkErrorModal />
 
-        {/* Minimalist Anti-Slop Splash Screen (Option B) */}
+        {/* Minimalist Splash Screen with Zero-Flicker Gatekeeper */}
         {isSplashActive && (
-          <InteractiveSplashScreen onFinish={() => setIsSplashActive(false)} />
+          <InteractiveSplashScreen
+            isReady={isHydrated}
+            onFinish={() => setIsSplashActive(false)}
+          />
         )}
       </View>
     </ThemeProvider>

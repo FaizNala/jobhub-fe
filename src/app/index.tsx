@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { StyleSheet, ScrollView, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
+import { Redirect } from 'expo-router';
 import { Colors } from '@/constants/theme';
 import {
   useJobs,
@@ -16,6 +17,9 @@ import {
 import { useOnboardingStore } from '@/modules/onboarding';
 
 export default function HomeScreen() {
+  const isHydrated = useOnboardingStore((state) => state.isHydrated);
+  const hasCompletedWalkthrough = useOnboardingStore((state) => state.hasCompletedWalkthrough);
+
   const {
     jobs,
     activeJob,
@@ -26,6 +30,11 @@ export default function HomeScreen() {
 
   const candidateProfile = useOnboardingStore((state) => state.candidateProfile);
   const [isDailyMatchVisible, setIsDailyMatchVisible] = useState(false);
+
+  // First-time cold launch: redirect to onboarding once storage is hydrated
+  if (isHydrated && !hasCompletedWalkthrough) {
+    return <Redirect href="/onboarding" />;
+  }
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>

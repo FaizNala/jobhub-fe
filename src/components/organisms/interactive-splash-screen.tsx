@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useRef } from 'react';
+import React, { useEffect, useCallback, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -19,6 +19,7 @@ import * as Haptics from 'expo-haptics';
 interface Props {
   onFinish?: () => void;
   minDurationMs?: number;
+  isReady?: boolean;
 }
 
 /**
@@ -29,12 +30,15 @@ interface Props {
  * - Accent: Vibrant Electric Lime (#B8F23E) punctuation dot
  * - Anti-Slop: Zero clutter, zero extra text, ultra-fast 650ms delight budget
  * - Responsive & Interactive: UI-thread Reanimated 60fps + Haptic Tap-to-skip
+ * - Zero-Flicker Gatekeeper: Holds viewport until store hydration and route gate are resolved
  */
 export function InteractiveSplashScreen({
   onFinish,
   minDurationMs = 650,
+  isReady = true,
 }: Props) {
   const hasFinishedRef = useRef(false);
+  const [minTimeElapsed, setMinTimeElapsed] = useState(false);
 
   // Allow QA / Visual testing to inspect splash screen state
   const isHeld =
@@ -87,16 +91,28 @@ export function InteractiveSplashScreen({
       dotScale.value = withSpring(1, { damping: 12, stiffness: 200 });
     }, 120);
 
-    // 3. Auto-exit after minimal duration (Zero-Wait Anti-Slop)
+    return () => {
+      clearTimeout(dotTimer);
+    };
+  }, [dotScale, logoOpacity, logoScale]);
+
+  // 3. Minimum duration timer
+  useEffect(() => {
     const exitTimer = setTimeout(() => {
-      triggerExit();
+      setMinTimeElapsed(true);
     }, effectiveDuration);
 
     return () => {
-      clearTimeout(dotTimer);
       clearTimeout(exitTimer);
     };
-  }, [dotScale, effectiveDuration, logoOpacity, logoScale, triggerExit]);
+  }, [effectiveDuration]);
+
+  // 4. Smoothly exit only when BOTH minimum duration has elapsed AND app is hydrated & ready
+  useEffect(() => {
+    if (minTimeElapsed && isReady) {
+      triggerExit();
+    }
+  }, [minTimeElapsed, isReady, triggerExit]);
 
   const containerAnimatedStyle = useAnimatedStyle(() => ({
     opacity: containerOpacity.value,
@@ -114,14 +130,22 @@ export function InteractiveSplashScreen({
   return (
     <Animated.View style={[styles.overlay, containerAnimatedStyle]}>
       <Pressable
+        style={styles.pressableArea}
         onPress={handleTapToSkip}
-        style={styles.pressable}
-        accessibilityRole="header"
-        accessibilityLabel="JobHub splash screen. Tap to skip.">
-        <Animated.View style={[styles.brandRow, logoAnimatedStyle]}>
-          <Text style={styles.brandTitle}>jobhub</Text>
-          <Animated.View style={[styles.brandDot, dotAnimatedStyle]} />
-        </Animated.View>
+        accessibilityRole="button"
+        accessibilityLabel="JobHub Splash Screen. Tap anywhere to skip."
+        accessibilityHint="Dismisses splash screen and continues to app.">
+        <View style={styles.content}>
+          <Animated.View style={[styles.logoRow, logoAnimatedStyle]}>
+            <Text style={styles.logoText}>jobhub</Text>
+            <Animated.View style={[styles.dot, dotAnimatedStyle]} />
+          </Animated.View>
+        </View>
+
+        {/* Micro subtle cue on web/mobile - ultra minimal */}
+        <View style={styles.footer}>
+          <Text style={styles.hintText}>Tap to skip</Text>
+        </View>
       </Pressable>
     </Animated.View>
   );
@@ -137,36 +161,55 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     zIndex: 99999,
     elevation: 99999,
-  },
-  pressable: {
-    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
-    justifyContent: 'center',
   },
-  brandRow: {
+  pressableArea: {
+    flex: 1,
+    width: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  content: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  logoRow: {
     flexDirection: 'row',
-    alignItems: 'baseline',
+    alignItems: 'flex-end',
     justifyContent: 'center',
   },
-  brandTitle: {
-    fontSize: 40,
-    fontWeight: '900',
+  logoText: {
+    fontFamily: Platform.select({
+      ios: 'System',
+      android: 'sans-serif-medium',
+      default: 'Inter, system-ui, -apple-system, sans-serif',
+    }),
+    fontSize: 48,
+    fontWeight: '800',
     color: '#121212',
-    letterSpacing: -1.4,
-    ...(Platform.OS === 'web'
-      ? ({
-          fontFamily:
-            '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
-          userSelect: 'none',
-        } as any)
-      : {}),
+    letterSpacing: -1.5,
+    includeFontPadding: false,
+    lineHeight: 52,
   },
-  brandDot: {
-    width: 9,
-    height: 9,
-    borderRadius: 4.5,
-    backgroundColor: '#B8F23E',
+  dot: {
+    width: 11,
+    height: 11,
+    borderRadius: 5.5,
+    backgroundColor: '#B8F23E', // Signature Electric Lime
     marginLeft: 3,
-    marginBottom: 4,
+    marginBottom: 8,
+  },
+  footer: {
+    position: 'absolute',
+    bottom: 40,
+    alignItems: 'center',
+  },
+  hintText: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#A0A0A0',
+    letterSpacing: 0.3,
   },
 });
