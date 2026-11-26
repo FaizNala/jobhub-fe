@@ -86,7 +86,7 @@ const styles = StyleSheet.create({
   countBadge: {
     fontSize: 10,
     fontWeight: '700',
-    color: '#73786B',
+    color: '#5A5D54',
     letterSpacing: 0.5,
   },
   list: {
@@ -127,9 +127,11 @@ const styles = StyleSheet.create({
   },
   periodPill: {
     backgroundColor: '#F4F6F0',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: Radius.full,
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: Radius.sm,
+    borderWidth: 1,
+    borderColor: '#E2E6DC',
   },
   periodText: {
     fontSize: 10,
@@ -140,10 +142,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#F9FAF7',
     alignSelf: 'flex-start',
     paddingHorizontal: 8,
-    paddingVertical: 3,
+    paddingVertical: 3.5,
     borderRadius: Radius.sm,
     borderWidth: 1,
-    borderColor: '#E8ECDF',
+    borderColor: '#E2E6DC',
   },
   gpaText: {
     fontSize: 10.5,
@@ -166,7 +168,7 @@ const styles = StyleSheet.create({
     width: 4,
     height: 4,
     borderRadius: 2,
-    backgroundColor: '#73786B',
+    backgroundColor: '#5A5D54',
     marginTop: 7,
   },
   bulletText: {

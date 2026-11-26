@@ -1,6 +1,6 @@
 import React from 'react';
-import { View, StyleSheet, TouchableOpacity, Linking } from 'react-native';
-import { FolderGit2, ExternalLink } from 'lucide-react-native';
+import { Platform, View, StyleSheet, Pressable, Linking } from 'react-native';
+import { Briefcase, ExternalLink } from 'lucide-react-native';
 import { Colors, Radius } from '@/constants/theme';
 import { Heading, Body, Label } from '@/components/atoms/typography';
 import { ProjectItem } from '../cv.types';
@@ -21,7 +21,7 @@ export const CvProjectsSection: React.FC<CvProjectsSectionProps> = ({ projects }
     <View style={styles.container}>
       <View style={styles.sectionHeader}>
         <View style={styles.titleRow}>
-          <FolderGit2 size={15} color="#121212" />
+          <Briefcase size={15} color="#121212" />
           <Heading style={styles.sectionTitle}>Featured Projects</Heading>
         </View>
         <Label style={styles.countBadge}>{projects.length} PROJECTS</Label>
@@ -69,17 +69,23 @@ export const CvProjectsSection: React.FC<CvProjectsSectionProps> = ({ projects }
 
             {/* Optional URL */}
             {proj.url ? (
-              <TouchableOpacity
+              <Pressable
                 onPress={() => handleOpenLink(proj.url)}
-                style={styles.linkButton}
-                activeOpacity={0.8}
+                style={state => [
+                  styles.linkButton,
+                  state.pressed && styles.pressedFade,
+                  Platform.OS === 'web' && (state as { focused?: boolean }).focused
+                    ? styles.webFocusRing
+                    : null,
+                  Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : null,
+                ]}
                 accessibilityRole="link"
-                accessibilityLabel={`Open repository for ${proj.name}`}>
-                <ExternalLink size={12} color="#2F4F00" />
+                accessibilityLabel={`Open link for ${proj.name}`}>
+                <ExternalLink size={13} color="#2F4F00" />
                 <Label style={styles.linkText} numberOfLines={1}>
                   {proj.url.replace(/^https?:\/\//, '')}
                 </Label>
-              </TouchableOpacity>
+              </Pressable>
             ) : null}
           </View>
         ))}
@@ -113,7 +119,7 @@ const styles = StyleSheet.create({
   countBadge: {
     fontSize: 10,
     fontWeight: '700',
-    color: '#73786B',
+    color: '#5A5D54',
     letterSpacing: 0.5,
   },
   list: {
@@ -148,9 +154,11 @@ const styles = StyleSheet.create({
   },
   periodPill: {
     backgroundColor: '#F4F6F0',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: Radius.full,
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: Radius.sm,
+    borderWidth: 1,
+    borderColor: '#E2E6DC',
   },
   periodText: {
     fontSize: 10,
@@ -170,10 +178,10 @@ const styles = StyleSheet.create({
   techChip: {
     backgroundColor: '#F9FAF7',
     borderWidth: 1,
-    borderColor: '#E8ECDF',
+    borderColor: '#E2E6DC',
     paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: Radius.full,
+    paddingVertical: 3.5,
+    borderRadius: Radius.sm,
   },
   techChipText: {
     fontSize: 10.5,
@@ -203,14 +211,27 @@ const styles = StyleSheet.create({
     color: '#343830',
   },
   linkButton: {
+    minHeight: 44,
     flexDirection: 'row',
     alignItems: 'center',
+    alignSelf: 'flex-start',
     gap: 6,
-    paddingTop: 4,
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+    borderRadius: Radius.sm,
   },
   linkText: {
-    fontSize: 11,
+    fontSize: 11.5,
     fontWeight: '700',
     color: '#2F4F00',
   },
+  pressedFade: {
+    opacity: 0.78,
+  },
+  webFocusRing: {
+    outlineWidth: 2,
+    outlineStyle: 'solid',
+    outlineColor: '#121212',
+    outlineOffset: 2,
+  } as any,
 });

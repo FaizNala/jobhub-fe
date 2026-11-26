@@ -20,7 +20,6 @@ import {
   Check,
   User,
   Briefcase,
-  FolderGit2,
   Cpu,
   GraduationCap,
   Users2,
@@ -77,22 +76,22 @@ const STEPS: StepDefinition[] = [
     id: 'skills',
     stepNumber: 2,
     label: 'Skills',
-    fullTitle: 'Technical & Soft Skills',
-    description: 'Hard engineering competencies and leadership capabilities.',
+    fullTitle: 'Core & Soft Skills',
+    description: 'Domain tools, specialized competencies, and leadership strengths.',
   },
   {
     id: 'experience',
     stepNumber: 3,
     label: 'Experience',
     fullTitle: 'Work Experience',
-    description: 'Career positions with quantified impact achievements.',
+    description: 'Career positions with measurable outcomes and responsibilities.',
   },
   {
     id: 'projects',
     stepNumber: 4,
     label: 'Projects',
     fullTitle: 'Featured Projects',
-    description: 'Key engineering architectures, repositories, and case studies.',
+    description: 'Key initiatives, portfolios, and notable deliverables.',
   },
   {
     id: 'education',
@@ -106,14 +105,14 @@ const STEPS: StepDefinition[] = [
     stepNumber: 6,
     label: 'Community',
     fullTitle: 'Leadership & Community',
-    description: 'Extracurricular leadership, open source, and communities.',
+    description: 'Extracurricular leadership, volunteering, and professional groups.',
   },
   {
     id: 'certifications',
     stepNumber: 7,
     label: 'Certs',
     fullTitle: 'Certifications',
-    description: 'Professional credentials and cloud/tech certificates.',
+    description: 'Professional credentials, licenses, and verified courses.',
   },
 ];
 
@@ -134,6 +133,7 @@ export const CvBuilderModal: React.FC<CvBuilderModalProps> = ({
   const [activeTab, setActiveTab] = useState<TabKey>('identity');
   const [editingMode, setEditingMode] = useState<EditingMode>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
 
   // 1. Identity & Contacts
   const [fullName, setFullName] = useState('');
@@ -218,8 +218,26 @@ export const CvBuilderModal: React.FC<CvBuilderModalProps> = ({
       setOrganizations(profile.organizations || []);
       setCertifications(profile.certifications || []);
       setEditingMode(null);
+      setFormError(null);
     }
   }, [profile, visible]);
+
+  useEffect(() => {
+    if (Platform.OS !== 'web' || !visible) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        if (editingMode) {
+          setEditingMode(null);
+          setFormError(null);
+        } else {
+          onClose();
+        }
+      }
+    };
+    window.addEventListener('keydown', onKeyDown, true);
+    return () => window.removeEventListener('keydown', onKeyDown, true);
+  }, [editingMode, onClose, visible]);
 
   // Stepper state
   const currentStepIndex = STEPS.findIndex(s => s.id === activeTab);
@@ -229,6 +247,7 @@ export const CvBuilderModal: React.FC<CvBuilderModalProps> = ({
   const nextStep = !isLastStep ? STEPS[currentStepIndex + 1] : null;
 
   const handleNextStep = () => {
+    setFormError(null);
     if (!isLastStep) {
       Haptics.selectionAsync().catch(() => {});
       setEditingMode(null);
@@ -239,6 +258,7 @@ export const CvBuilderModal: React.FC<CvBuilderModalProps> = ({
   };
 
   const handlePrevStep = () => {
+    setFormError(null);
     if (!isFirstStep) {
       Haptics.selectionAsync().catch(() => {});
       setEditingMode(null);
@@ -248,6 +268,7 @@ export const CvBuilderModal: React.FC<CvBuilderModalProps> = ({
 
   const handleSelectStep = (tabId: TabKey) => {
     Haptics.selectionAsync().catch(() => {});
+    setFormError(null);
     setEditingMode(null);
     setActiveTab(tabId);
   };
@@ -326,14 +347,18 @@ export const CvBuilderModal: React.FC<CvBuilderModalProps> = ({
   };
 
   const handleSaveExperience = () => {
-    if (!expRole.trim() || !expCompany.trim()) return;
+    if (!expRole.trim() || !expCompany.trim()) {
+      setFormError('Please enter both role title and company name.');
+      return;
+    }
+    setFormError(null);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     const finalBullets =
       expBullets.length > 0
         ? expBullets
         : newBulletText.trim()
         ? [newBulletText.trim()]
-        : ['Contributed to core architecture and product delivery.'];
+        : ['Delivered core role responsibilities and measurable team outcomes.'];
 
     if (editingMode?.id) {
       setExperiences(
@@ -410,14 +435,18 @@ export const CvBuilderModal: React.FC<CvBuilderModalProps> = ({
   };
 
   const handleSaveProject = () => {
-    if (!projName.trim() || !projRole.trim()) return;
+    if (!projName.trim() || !projRole.trim()) {
+      setFormError('Please enter both project name and your role.');
+      return;
+    }
+    setFormError(null);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     const finalBullets =
       projBullets.length > 0
         ? projBullets
         : newProjBulletText.trim()
         ? [newProjBulletText.trim()]
-        : ['Delivered core engineering architecture and system capabilities.'];
+        : ['Delivered key project milestones and measurable results.'];
 
     if (editingMode?.id) {
       setProjects(
@@ -429,8 +458,7 @@ export const CvBuilderModal: React.FC<CvBuilderModalProps> = ({
                 role: projRole.trim(),
                 period: projPeriod.trim() || '2024',
                 url: projUrl.trim() || undefined,
-                techStack:
-                  projStack.length > 0 ? projStack : ['TypeScript', 'React Native'],
+                techStack: projStack,
                 overview: p.overview || finalBullets[0],
                 highlights: finalBullets,
               }
@@ -444,8 +472,7 @@ export const CvBuilderModal: React.FC<CvBuilderModalProps> = ({
         role: projRole.trim(),
         period: projPeriod.trim() || '2024',
         url: projUrl.trim() || undefined,
-        techStack:
-          projStack.length > 0 ? projStack : ['TypeScript', 'React Native'],
+        techStack: projStack,
         overview: finalBullets[0],
         highlights: finalBullets,
       };
@@ -526,7 +553,11 @@ export const CvBuilderModal: React.FC<CvBuilderModalProps> = ({
   };
 
   const handleSaveEducation = () => {
-    if (!eduSchool.trim() || !eduDegree.trim()) return;
+    if (!eduSchool.trim() || !eduDegree.trim()) {
+      setFormError('Please enter both institution and degree title.');
+      return;
+    }
+    setFormError(null);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     const finalBullets =
       eduBullets.length > 0
@@ -608,7 +639,11 @@ export const CvBuilderModal: React.FC<CvBuilderModalProps> = ({
   };
 
   const handleSaveOrganization = () => {
-    if (!orgName.trim() || !orgRole.trim()) return;
+    if (!orgName.trim() || !orgRole.trim()) {
+      setFormError('Please enter both organization name and role.');
+      return;
+    }
+    setFormError(null);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     const finalBullets =
       orgBullets.length > 0
@@ -617,7 +652,7 @@ export const CvBuilderModal: React.FC<CvBuilderModalProps> = ({
         ? [newOrgBulletText.trim()]
         : orgDesc.trim()
         ? [orgDesc.trim()]
-        : ['Contributed to engineering community leadership and tech meetups.'];
+        : ['Contributed to community initiatives and team coordination.'];
 
     const finalDesc = orgDesc.trim() || finalBullets[0];
 
@@ -675,7 +710,11 @@ export const CvBuilderModal: React.FC<CvBuilderModalProps> = ({
   };
 
   const handleSaveCertification = () => {
-    if (!certName.trim() || !certIssuer.trim()) return;
+    if (!certName.trim() || !certIssuer.trim()) {
+      setFormError('Please enter both credential name and issuing organization.');
+      return;
+    }
+    setFormError(null);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
 
     if (editingMode?.id) {
@@ -712,6 +751,14 @@ export const CvBuilderModal: React.FC<CvBuilderModalProps> = ({
 
   // Save All Changes (Whole Dossier)
   const handleSave = async () => {
+    if (!fullName.trim() || !headline.trim()) {
+      setActiveTab('identity');
+      setEditingMode(null);
+      setFormError('Please enter your full name and professional headline.');
+      return;
+    }
+
+    setFormError(null);
     setIsSaving(true);
     try {
       await onSave({
@@ -740,8 +787,8 @@ export const CvBuilderModal: React.FC<CvBuilderModalProps> = ({
         () => {}
       );
       onClose();
-    } catch {
-      // Handled in caller
+    } catch (err: any) {
+      setFormError(err?.message || 'Unable to save CV changes. Please try again.');
     } finally {
       setIsSaving(false);
     }
@@ -784,14 +831,27 @@ export const CvBuilderModal: React.FC<CvBuilderModalProps> = ({
             </TouchableOpacity>
           </View>
 
-          {/* Stepper Progress Bar */}
-          <View style={styles.stepperProgressTrack}>
-            <View
-              style={[
-                styles.stepperProgressFill,
-                { width: `${((currentStepIndex + 1) / STEPS.length) * 100}%` },
-              ]}
-            />
+          {/* Segmented Stepper Progress Bar (Matching Match Deck) */}
+          <View style={styles.stepperProgressWrap}>
+            <View style={styles.stepperSegmentsRow} accessibilityElementsHidden>
+              {STEPS.map((step, idx) => {
+                const isDone = idx < currentStepIndex;
+                const isCurrent = idx === currentStepIndex;
+                return (
+                  <View
+                    key={step.id}
+                    style={[
+                      styles.stepperProgressSegment,
+                      isDone && styles.stepperProgressSegmentDone,
+                      isCurrent && styles.stepperProgressSegmentActive,
+                    ]}
+                  />
+                );
+              })}
+            </View>
+            <Text style={styles.stepperProgressLabel}>
+              {currentStep.stepNumber} / {STEPS.length}
+            </Text>
           </View>
 
           {/* Stepper Stage Tabs (Explore & Tracker Mechanism) - Only visible when not in sub-editor */}
@@ -871,6 +931,13 @@ export const CvBuilderModal: React.FC<CvBuilderModalProps> = ({
             </View>
           )}
 
+          {/* Validation / Save Error Banner */}
+          {formError ? (
+            <View style={styles.formErrorBanner} accessibilityLiveRegion="polite">
+              <Text style={styles.formErrorText}>{formError}</Text>
+            </View>
+          ) : null}
+
           {/* Tab Content Body */}
           <ScrollView
             showsVerticalScrollIndicator={true}
@@ -888,7 +955,7 @@ export const CvBuilderModal: React.FC<CvBuilderModalProps> = ({
                     value={fullName}
                     onChangeText={setFullName}
                     placeholder="e.g. Alex Morgan"
-                    placeholderTextColor="#A0A59A"
+                    placeholderTextColor="#5A5D54"
                   />
                 </View>
 
@@ -899,7 +966,7 @@ export const CvBuilderModal: React.FC<CvBuilderModalProps> = ({
                     value={headline}
                     onChangeText={setHeadline}
                     placeholder="e.g. Senior Mobile Systems Architect"
-                    placeholderTextColor="#A0A59A"
+                    placeholderTextColor="#5A5D54"
                   />
                 </View>
 
@@ -910,7 +977,7 @@ export const CvBuilderModal: React.FC<CvBuilderModalProps> = ({
                     value={location}
                     onChangeText={setLocation}
                     placeholder="e.g. San Francisco, CA (Open to Remote)"
-                    placeholderTextColor="#A0A59A"
+                    placeholderTextColor="#5A5D54"
                   />
                 </View>
 
@@ -926,7 +993,7 @@ export const CvBuilderModal: React.FC<CvBuilderModalProps> = ({
                       keyboardType="email-address"
                       autoCapitalize="none"
                       placeholder="e.g. alex@example.com"
-                      placeholderTextColor="#A0A59A"
+                      placeholderTextColor="#5A5D54"
                     />
                   </View>
                   <View style={[styles.inputGroup, styles.flexInput]}>
@@ -939,7 +1006,7 @@ export const CvBuilderModal: React.FC<CvBuilderModalProps> = ({
                       onChangeText={setPhone}
                       keyboardType="phone-pad"
                       placeholder="e.g. +1 (555) 019-2834"
-                      placeholderTextColor="#A0A59A"
+                      placeholderTextColor="#5A5D54"
                     />
                   </View>
                 </View>
@@ -952,7 +1019,7 @@ export const CvBuilderModal: React.FC<CvBuilderModalProps> = ({
                     onChangeText={setPortfolio}
                     autoCapitalize="none"
                     placeholder="e.g. https://alexmorgan.dev"
-                    placeholderTextColor="#A0A59A"
+                    placeholderTextColor="#5A5D54"
                   />
                 </View>
 
@@ -967,7 +1034,7 @@ export const CvBuilderModal: React.FC<CvBuilderModalProps> = ({
                       onChangeText={setGithub}
                       autoCapitalize="none"
                       placeholder="e.g. github.com/alexmorgan"
-                      placeholderTextColor="#A0A59A"
+                      placeholderTextColor="#5A5D54"
                     />
                   </View>
                   <View style={[styles.inputGroup, styles.flexInput]}>
@@ -980,7 +1047,7 @@ export const CvBuilderModal: React.FC<CvBuilderModalProps> = ({
                       onChangeText={setLinkedin}
                       autoCapitalize="none"
                       placeholder="e.g. linkedin.com/in/alexmorgan"
-                      placeholderTextColor="#A0A59A"
+                      placeholderTextColor="#5A5D54"
                     />
                   </View>
                 </View>
@@ -995,7 +1062,7 @@ export const CvBuilderModal: React.FC<CvBuilderModalProps> = ({
                     value={summary}
                     onChangeText={t => setSummary(t.slice(0, 600))}
                     placeholder="Write a high-impact executive summary describing your domain expertise, engineering track record, and technical leadership..."
-                    placeholderTextColor="#A0A59A"
+                    placeholderTextColor="#5A5D54"
                     multiline
                     textAlignVertical="top"
                   />
@@ -1016,7 +1083,7 @@ export const CvBuilderModal: React.FC<CvBuilderModalProps> = ({
                       value={newHardSkill}
                       onChangeText={setNewHardSkill}
                       placeholder="e.g. Swift, Docker, GraphQL, Redis"
-                      placeholderTextColor="#A0A59A"
+                      placeholderTextColor="#5A5D54"
                       onSubmitEditing={handleAddHardSkill}
                     />
                     <TouchableOpacity
@@ -1049,7 +1116,7 @@ export const CvBuilderModal: React.FC<CvBuilderModalProps> = ({
                       value={newSoftSkill}
                       onChangeText={setNewSoftSkill}
                       placeholder="e.g. Mentorship, Cross-functional Squads"
-                      placeholderTextColor="#A0A59A"
+                      placeholderTextColor="#5A5D54"
                       onSubmitEditing={handleAddSoftSkill}
                     />
                     <TouchableOpacity
@@ -1102,7 +1169,7 @@ export const CvBuilderModal: React.FC<CvBuilderModalProps> = ({
                         value={expRole}
                         onChangeText={setExpRole}
                         placeholder="e.g. Staff Mobile Architect"
-                        placeholderTextColor="#A0A59A"
+                        placeholderTextColor="#5A5D54"
                       />
                     </View>
 
@@ -1113,7 +1180,7 @@ export const CvBuilderModal: React.FC<CvBuilderModalProps> = ({
                         value={expCompany}
                         onChangeText={setExpCompany}
                         placeholder="e.g. Stripe"
-                        placeholderTextColor="#A0A59A"
+                        placeholderTextColor="#5A5D54"
                       />
                     </View>
 
@@ -1127,7 +1194,7 @@ export const CvBuilderModal: React.FC<CvBuilderModalProps> = ({
                           value={expPeriod}
                           onChangeText={setExpPeriod}
                           placeholder="e.g. 2022 - Present"
-                          placeholderTextColor="#A0A59A"
+                          placeholderTextColor="#5A5D54"
                         />
                       </View>
                       <View style={[styles.inputGroup, styles.flexInput]}>
@@ -1139,7 +1206,7 @@ export const CvBuilderModal: React.FC<CvBuilderModalProps> = ({
                           value={expLocation}
                           onChangeText={setExpLocation}
                           placeholder="e.g. San Francisco, CA (Remote)"
-                          placeholderTextColor="#A0A59A"
+                          placeholderTextColor="#5A5D54"
                         />
                       </View>
                     </View>
@@ -1163,7 +1230,7 @@ export const CvBuilderModal: React.FC<CvBuilderModalProps> = ({
                             onPress={() => handleRemoveExpBullet(idx)}
                             style={styles.removeBulletBtn}
                             accessibilityLabel={`Delete bullet ${idx + 1}`}>
-                            <X size={13} color="#A03020" />
+                            <X size={13} color="#991B1B" />
                           </TouchableOpacity>
                         </View>
                       ))}
@@ -1175,7 +1242,7 @@ export const CvBuilderModal: React.FC<CvBuilderModalProps> = ({
                           value={newBulletText}
                           onChangeText={setNewBulletText}
                           placeholder="e.g. Decreased app cold-start latency by 42% across 3M MAU by rearchitecting Hermes bundle initialization..."
-                          placeholderTextColor="#A0A59A"
+                          placeholderTextColor="#5A5D54"
                           multiline
                         />
                         <TouchableOpacity
@@ -1228,7 +1295,7 @@ export const CvBuilderModal: React.FC<CvBuilderModalProps> = ({
 
                     {experiences.length === 0 ? (
                       <View style={styles.emptyStateCard}>
-                        <Briefcase size={28} color="#73786B" />
+                        <Briefcase size={28} color="#5A5D54" />
                         <Heading style={styles.emptyStateTitle}>No work experience added yet</Heading>
                         <Body style={styles.emptyStateText}>
                           Add your employment history with quantified achievements in Google XYZ format.
@@ -1285,7 +1352,7 @@ export const CvBuilderModal: React.FC<CvBuilderModalProps> = ({
                               style={styles.cardDeleteCompactBtn}
                               accessibilityRole="button"
                               accessibilityLabel={`Delete ${e.role} at ${e.company}`}>
-                              <Trash2 size={14} color="#A03020" />
+                              <Trash2 size={14} color="#991B1B" />
                             </TouchableOpacity>
                           </View>
                         </View>
@@ -1322,7 +1389,7 @@ export const CvBuilderModal: React.FC<CvBuilderModalProps> = ({
                         value={projName}
                         onChangeText={setProjName}
                         placeholder="e.g. React Native TurboEngine"
-                        placeholderTextColor="#A0A59A"
+                        placeholderTextColor="#5A5D54"
                       />
                     </View>
 
@@ -1333,7 +1400,7 @@ export const CvBuilderModal: React.FC<CvBuilderModalProps> = ({
                         value={projRole}
                         onChangeText={setProjRole}
                         placeholder="e.g. Creator & Core Contributor"
-                        placeholderTextColor="#A0A59A"
+                        placeholderTextColor="#5A5D54"
                       />
                     </View>
 
@@ -1344,20 +1411,20 @@ export const CvBuilderModal: React.FC<CvBuilderModalProps> = ({
                         value={projPeriod}
                         onChangeText={setProjPeriod}
                         placeholder="e.g. 2024"
-                        placeholderTextColor="#A0A59A"
+                        placeholderTextColor="#5A5D54"
                       />
                     </View>
 
-                    {/* Tech Stack Chips Manager */}
+                    {/* Tools & Stack Chips Manager */}
                     <View style={[styles.inputGroup, { marginTop: 6 }]}>
-                      <Label style={styles.inputLabel}>TECHNOLOGY STACK</Label>
+                      <Label style={styles.inputLabel}>TOOLS, STACK OR METHODS (OPTIONAL)</Label>
                       <View style={styles.addTagRow}>
                         <TextInput
                           style={[styles.input, styles.flexInput]}
                           value={newStackTag}
                           onChangeText={setNewStackTag}
-                          placeholder="e.g. React Native, Rust, JSI, C++"
-                          placeholderTextColor="#A0A59A"
+                          placeholder="e.g. Figma, Excel, React Native, SQL"
+                          placeholderTextColor="#5A5D54"
                           onSubmitEditing={handleAddProjStack}
                         />
                         <TouchableOpacity
@@ -1401,7 +1468,7 @@ export const CvBuilderModal: React.FC<CvBuilderModalProps> = ({
                             onPress={() => handleRemoveProjBullet(idx)}
                             style={styles.removeBulletBtn}
                             accessibilityLabel={`Delete project bullet ${idx + 1}`}>
-                            <X size={13} color="#A03020" />
+                            <X size={13} color="#991B1B" />
                           </TouchableOpacity>
                         </View>
                       ))}
@@ -1413,7 +1480,7 @@ export const CvBuilderModal: React.FC<CvBuilderModalProps> = ({
                           value={newProjBulletText}
                           onChangeText={setNewProjBulletText}
                           placeholder="e.g. Achieved 12,000+ GitHub stars and adoption by 3 YC-backed production apps by designing a zero-copy Hermes bridge..."
-                          placeholderTextColor="#A0A59A"
+                          placeholderTextColor="#5A5D54"
                           multiline
                         />
                         <TouchableOpacity
@@ -1466,7 +1533,7 @@ export const CvBuilderModal: React.FC<CvBuilderModalProps> = ({
 
                     {projects.length === 0 ? (
                       <View style={styles.emptyStateCard}>
-                        <FolderGit2 size={28} color="#73786B" />
+                        <Briefcase size={28} color="#5A5D54" />
                         <Heading style={styles.emptyStateTitle}>No projects added yet</Heading>
                         <Body style={styles.emptyStateText}>
                           Showcase open source libraries, system architectures, and core contributions.
@@ -1536,7 +1603,7 @@ export const CvBuilderModal: React.FC<CvBuilderModalProps> = ({
                               style={styles.cardDeleteCompactBtn}
                               accessibilityRole="button"
                               accessibilityLabel={`Delete ${p.name}`}>
-                              <Trash2 size={14} color="#A03020" />
+                              <Trash2 size={14} color="#991B1B" />
                             </TouchableOpacity>
                           </View>
                         </View>
@@ -1573,7 +1640,7 @@ export const CvBuilderModal: React.FC<CvBuilderModalProps> = ({
                         value={eduDegree}
                         onChangeText={setEduDegree}
                         placeholder="e.g. Bachelor of Science"
-                        placeholderTextColor="#A0A59A"
+                        placeholderTextColor="#5A5D54"
                       />
                     </View>
 
@@ -1584,7 +1651,7 @@ export const CvBuilderModal: React.FC<CvBuilderModalProps> = ({
                         value={eduSchool}
                         onChangeText={setEduSchool}
                         placeholder="e.g. University of California, Berkeley"
-                        placeholderTextColor="#A0A59A"
+                        placeholderTextColor="#5A5D54"
                       />
                     </View>
 
@@ -1595,7 +1662,7 @@ export const CvBuilderModal: React.FC<CvBuilderModalProps> = ({
                         value={eduField}
                         onChangeText={setEduField}
                         placeholder="e.g. Computer Science & Software Engineering"
-                        placeholderTextColor="#A0A59A"
+                        placeholderTextColor="#5A5D54"
                       />
                     </View>
 
@@ -1609,7 +1676,7 @@ export const CvBuilderModal: React.FC<CvBuilderModalProps> = ({
                           value={eduYear}
                           onChangeText={setEduYear}
                           placeholder="e.g. 2021"
-                          placeholderTextColor="#A0A59A"
+                          placeholderTextColor="#5A5D54"
                         />
                       </View>
                       <View style={[styles.inputGroup, styles.flexInput]}>
@@ -1621,7 +1688,7 @@ export const CvBuilderModal: React.FC<CvBuilderModalProps> = ({
                           value={eduGpa}
                           onChangeText={setEduGpa}
                           placeholder="e.g. 3.85 / 4.0"
-                          placeholderTextColor="#A0A59A"
+                          placeholderTextColor="#5A5D54"
                         />
                       </View>
                     </View>
@@ -1645,7 +1712,7 @@ export const CvBuilderModal: React.FC<CvBuilderModalProps> = ({
                             onPress={() => handleRemoveEduBullet(idx)}
                             style={styles.removeBulletBtn}
                             accessibilityLabel={`Delete bullet ${idx + 1}`}>
-                            <X size={13} color="#A03020" />
+                            <X size={13} color="#991B1B" />
                           </TouchableOpacity>
                         </View>
                       ))}
@@ -1657,7 +1724,7 @@ export const CvBuilderModal: React.FC<CvBuilderModalProps> = ({
                           value={newEduBulletText}
                           onChangeText={setNewEduBulletText}
                           placeholder="e.g. Dean’s Honor List (Top 5% of class) across all 8 academic semesters..."
-                          placeholderTextColor="#A0A59A"
+                          placeholderTextColor="#5A5D54"
                           multiline
                         />
                         <TouchableOpacity
@@ -1709,7 +1776,7 @@ export const CvBuilderModal: React.FC<CvBuilderModalProps> = ({
 
                     {education.length === 0 ? (
                       <View style={styles.emptyStateCard}>
-                        <GraduationCap size={28} color="#73786B" />
+                        <GraduationCap size={28} color="#5A5D54" />
                         <Heading style={styles.emptyStateTitle}>No education listed yet</Heading>
                         <Body style={styles.emptyStateText}>
                           Add your university degrees, coursework, or academic credentials.
@@ -1767,7 +1834,7 @@ export const CvBuilderModal: React.FC<CvBuilderModalProps> = ({
                               style={styles.cardDeleteCompactBtn}
                               accessibilityRole="button"
                               accessibilityLabel={`Delete ${ed.degree}`}>
-                              <Trash2 size={14} color="#A03020" />
+                              <Trash2 size={14} color="#991B1B" />
                             </TouchableOpacity>
                           </View>
                         </View>
@@ -1804,7 +1871,7 @@ export const CvBuilderModal: React.FC<CvBuilderModalProps> = ({
                         value={orgName}
                         onChangeText={setOrgName}
                         placeholder="e.g. React Native Indonesia Community"
-                        placeholderTextColor="#A0A59A"
+                        placeholderTextColor="#5A5D54"
                       />
                     </View>
 
@@ -1815,7 +1882,7 @@ export const CvBuilderModal: React.FC<CvBuilderModalProps> = ({
                         value={orgRole}
                         onChangeText={setOrgRole}
                         placeholder="e.g. Chapter Lead & Conference Speaker"
-                        placeholderTextColor="#A0A59A"
+                        placeholderTextColor="#5A5D54"
                       />
                     </View>
 
@@ -1826,7 +1893,7 @@ export const CvBuilderModal: React.FC<CvBuilderModalProps> = ({
                         value={orgPeriod}
                         onChangeText={setOrgPeriod}
                         placeholder="e.g. 2023 - Present"
-                        placeholderTextColor="#A0A59A"
+                        placeholderTextColor="#5A5D54"
                       />
                     </View>
 
@@ -1849,7 +1916,7 @@ export const CvBuilderModal: React.FC<CvBuilderModalProps> = ({
                             onPress={() => handleRemoveOrgBullet(idx)}
                             style={styles.removeBulletBtn}
                             accessibilityLabel={`Delete bullet ${idx + 1}`}>
-                            <X size={13} color="#A03020" />
+                            <X size={13} color="#991B1B" />
                           </TouchableOpacity>
                         </View>
                       ))}
@@ -1861,7 +1928,7 @@ export const CvBuilderModal: React.FC<CvBuilderModalProps> = ({
                           value={newOrgBulletText}
                           onChangeText={setNewOrgBulletText}
                           placeholder="e.g. Hosted 6 technical panel sessions on React Native Architecture with 400+ mobile devs..."
-                          placeholderTextColor="#A0A59A"
+                          placeholderTextColor="#5A5D54"
                           multiline
                         />
                         <TouchableOpacity
@@ -1881,7 +1948,7 @@ export const CvBuilderModal: React.FC<CvBuilderModalProps> = ({
                         value={orgDesc}
                         onChangeText={setOrgDesc}
                         placeholder="Brief one-line summary of the community..."
-                        placeholderTextColor="#A0A59A"
+                        placeholderTextColor="#5A5D54"
                       />
                     </View>
 
@@ -1924,7 +1991,7 @@ export const CvBuilderModal: React.FC<CvBuilderModalProps> = ({
 
                     {organizations.length === 0 ? (
                       <View style={styles.emptyStateCard}>
-                        <Users2 size={28} color="#73786B" />
+                        <Users2 size={28} color="#5A5D54" />
                         <Heading style={styles.emptyStateTitle}>No community leadership added</Heading>
                         <Body style={styles.emptyStateText}>
                           Document open source leadership, meetup coordination, or tech advisory roles.
@@ -1976,7 +2043,7 @@ export const CvBuilderModal: React.FC<CvBuilderModalProps> = ({
                               style={styles.cardDeleteCompactBtn}
                               accessibilityRole="button"
                               accessibilityLabel={`Delete ${o.role}`}>
-                              <Trash2 size={14} color="#A03020" />
+                              <Trash2 size={14} color="#991B1B" />
                             </TouchableOpacity>
                           </View>
                         </View>
@@ -2013,7 +2080,7 @@ export const CvBuilderModal: React.FC<CvBuilderModalProps> = ({
                         value={certName}
                         onChangeText={setCertName}
                         placeholder="e.g. AWS Certified Solutions Architect - Professional"
-                        placeholderTextColor="#A0A59A"
+                        placeholderTextColor="#5A5D54"
                       />
                     </View>
 
@@ -2024,7 +2091,7 @@ export const CvBuilderModal: React.FC<CvBuilderModalProps> = ({
                         value={certIssuer}
                         onChangeText={setCertIssuer}
                         placeholder="e.g. Amazon Web Services"
-                        placeholderTextColor="#A0A59A"
+                        placeholderTextColor="#5A5D54"
                       />
                     </View>
 
@@ -2038,7 +2105,7 @@ export const CvBuilderModal: React.FC<CvBuilderModalProps> = ({
                           value={certDate}
                           onChangeText={setCertDate}
                           placeholder="e.g. 2024"
-                          placeholderTextColor="#A0A59A"
+                          placeholderTextColor="#5A5D54"
                         />
                       </View>
                       <View style={[styles.inputGroup, styles.flexInput]}>
@@ -2051,7 +2118,7 @@ export const CvBuilderModal: React.FC<CvBuilderModalProps> = ({
                           onChangeText={setCertUrl}
                           autoCapitalize="none"
                           placeholder="e.g. credly.com/earner/..."
-                          placeholderTextColor="#A0A59A"
+                          placeholderTextColor="#5A5D54"
                         />
                       </View>
                     </View>
@@ -2095,7 +2162,7 @@ export const CvBuilderModal: React.FC<CvBuilderModalProps> = ({
 
                     {certifications.length === 0 ? (
                       <View style={styles.emptyStateCard}>
-                        <Award size={28} color="#73786B" />
+                        <Award size={28} color="#5A5D54" />
                         <Heading style={styles.emptyStateTitle}>No certifications added yet</Heading>
                         <Body style={styles.emptyStateText}>
                           Add verified industry certifications, cloud licenses, or specialized credentials.
@@ -2140,7 +2207,7 @@ export const CvBuilderModal: React.FC<CvBuilderModalProps> = ({
                               style={styles.cardDeleteCompactBtn}
                               accessibilityRole="button"
                               accessibilityLabel={`Delete ${c.name}`}>
-                              <Trash2 size={14} color="#A03020" />
+                              <Trash2 size={14} color="#991B1B" />
                             </TouchableOpacity>
                           </View>
                         </View>
@@ -2229,13 +2296,16 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   sheetContainer: {
+    width: '100%',
+    maxWidth: 640,
+    alignSelf: 'center',
     backgroundColor: '#FFFFFF',
     borderTopLeftRadius: Radius.lg,
     borderTopRightRadius: Radius.lg,
     height: '90%',
     maxHeight: '94%',
     borderWidth: 1,
-    borderColor: '#E8ECDF',
+    borderColor: '#E2E6DC',
     overflow: 'hidden',
   },
   sheetHeader: {
@@ -2281,21 +2351,62 @@ const styles = StyleSheet.create({
     color: '#5A5D54',
   },
   closeBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: Radius.full,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: '#F4F6F0',
+    borderWidth: 1,
+    borderColor: '#E2E6DC',
     alignItems: 'center',
     justifyContent: 'center',
+    ...(Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : null),
   },
-  stepperProgressTrack: {
-    height: 3,
-    backgroundColor: '#E8ECDF',
-    width: '100%',
+  formErrorBanner: {
+    marginHorizontal: 20,
+    marginTop: 10,
+    backgroundColor: '#FEE2E2',
+    borderWidth: 1,
+    borderColor: '#FCA5A5',
+    borderRadius: Radius.sm,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
   },
-  stepperProgressFill: {
-    height: '100%',
-    backgroundColor: '#B8F23E',
+  formErrorText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#991B1B',
+  },
+  stepperProgressWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingHorizontal: 20,
+    paddingBottom: 12,
+  },
+  stepperSegmentsRow: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  stepperProgressSegment: {
+    flex: 1,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#D6DCD0',
+  },
+  stepperProgressSegmentDone: {
+    backgroundColor: '#121212',
+  },
+  stepperProgressSegmentActive: {
+    backgroundColor: '#2E6F00',
+  },
+  stepperProgressLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#5A5D54',
+    letterSpacing: 0.2,
+    fontVariant: ['tabular-nums'],
   },
   stepperTabsContainer: {
     backgroundColor: '#FFFFFF',
@@ -2304,7 +2415,7 @@ const styles = StyleSheet.create({
   },
   stepperScrollView: {
     flexGrow: 0,
-    height: 48,
+    height: 58,
   },
   stepperScrollContent: {
     paddingHorizontal: 16,
@@ -2318,9 +2429,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
     paddingHorizontal: 12,
-    height: 34,
+    minHeight: 44,
     borderRadius: Radius.full,
     borderWidth: 1,
+    ...(Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : null),
   },
   stepPillDefault: {
     backgroundColor: '#FFFFFF',
@@ -2380,7 +2492,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   stepCountTextDefault: {
-    color: '#73786B',
+    color: '#5A5D54',
   },
   stepCountTextSelected: {
     color: '#121212',
@@ -2406,7 +2518,7 @@ const styles = StyleSheet.create({
   },
   fieldHint: {
     fontSize: 11,
-    color: '#73786B',
+    color: '#5A5D54',
   },
   labelCountRow: {
     flexDirection: 'row',
@@ -2416,7 +2528,7 @@ const styles = StyleSheet.create({
   },
   charCount: {
     fontSize: 10.5,
-    color: '#73786B',
+    color: '#5A5D54',
   },
   input: {
     backgroundColor: '#F9FAF7',
@@ -2444,13 +2556,15 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   addTagBtn: {
+    minHeight: 44,
     backgroundColor: '#B8F23E',
-    paddingHorizontal: 12,
-    paddingVertical: 7,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
     borderRadius: Radius.sm,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
+    ...(Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : null),
   },
   addTagBtnText: {
     fontSize: 11,
@@ -2464,15 +2578,17 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   tagChip: {
+    minHeight: 36,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
     backgroundColor: '#EFFCD3',
     paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: Radius.full,
+    paddingVertical: 6,
+    borderRadius: Radius.sm,
     borderWidth: 1,
     borderColor: '#B8F23E',
+    ...(Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : null),
   },
   tagText: {
     fontSize: 11,
@@ -2518,7 +2634,7 @@ const styles = StyleSheet.create({
   },
   listSectionSubtitle: {
     fontSize: 11,
-    color: '#73786B',
+    color: '#5A5D54',
   },
   emptyStateCard: {
     backgroundColor: '#F9FAF7',
@@ -2543,16 +2659,18 @@ const styles = StyleSheet.create({
     maxWidth: 280,
   },
   emptyStateBtn: {
+    minHeight: 44,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#121212',
-    paddingHorizontal: 14,
+    paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: Radius.sm,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
     marginTop: 6,
+    ...(Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : null),
   },
   emptyStateBtnText: {
     fontSize: 11.5,
@@ -2589,7 +2707,7 @@ const styles = StyleSheet.create({
   },
   metaDot: {
     fontSize: 10,
-    color: '#A0A59A',
+    color: '#5A5D54',
   },
   cardItemPeriod: {
     fontSize: 11,
@@ -2597,7 +2715,7 @@ const styles = StyleSheet.create({
   },
   cardItemLocation: {
     fontSize: 11,
-    color: '#73786B',
+    color: '#5A5D54',
   },
   cardActionsRow: {
     flexDirection: 'row',
@@ -2614,11 +2732,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    height: 36,
+    minHeight: 44,
     backgroundColor: '#F4F6F0',
     borderRadius: Radius.sm,
     borderWidth: 1,
-    borderColor: '#E8ECDF',
+    borderColor: '#E2E6DC',
+    ...(Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : null),
   },
   cardEditLongText: {
     fontSize: 11.5,
@@ -2626,14 +2745,15 @@ const styles = StyleSheet.create({
     color: '#121212',
   },
   cardDeleteCompactBtn: {
-    width: 36,
-    height: 36,
+    width: 44,
+    height: 44,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FFF0F0',
+    backgroundColor: '#FEE2E2',
     borderRadius: Radius.sm,
     borderWidth: 1,
-    borderColor: '#F8D7D7',
+    borderColor: '#FCA5A5',
+    ...(Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : null),
   },
   cardBulletsContainer: {
     gap: 5,
@@ -2686,7 +2806,12 @@ const styles = StyleSheet.create({
     color: '#121212',
   },
   cancelEditorIconBtn: {
-    padding: 4,
+    minWidth: 44,
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 22,
+    ...(Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : null),
   },
   bulletRow: {
     flexDirection: 'row',
@@ -2713,23 +2838,30 @@ const styles = StyleSheet.create({
     lineHeight: 16,
   },
   removeBulletBtn: {
-    padding: 2,
-    marginTop: -1,
+    minWidth: 44,
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: -6,
+    marginRight: -6,
+    ...(Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : null),
   },
   addBulletInputRow: {
     gap: 8,
     marginTop: 4,
   },
   addBulletBtn: {
+    minHeight: 44,
     backgroundColor: '#B8F23E',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
     borderRadius: Radius.sm,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 5,
     alignSelf: 'flex-start',
+    ...(Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : null),
   },
   addBulletBtnText: {
     fontSize: 11,
@@ -2747,12 +2879,15 @@ const styles = StyleSheet.create({
     paddingTop: 12,
   },
   editorCancelBtn: {
+    minHeight: 44,
+    justifyContent: 'center',
     paddingVertical: 10,
     paddingHorizontal: 16,
     borderRadius: Radius.sm,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#E8ECDF',
+    borderColor: '#E2E6DC',
+    ...(Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : null),
   },
   editorCancelText: {
     fontSize: 12,
@@ -2760,6 +2895,8 @@ const styles = StyleSheet.create({
     color: '#5A5D54',
   },
   editorSaveBtn: {
+    minHeight: 44,
+    justifyContent: 'center',
     backgroundColor: '#B8F23E',
     paddingVertical: 10,
     paddingHorizontal: 18,
@@ -2767,6 +2904,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
+    ...(Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : null),
   },
   editorSaveText: {
     fontSize: 12,
@@ -2790,16 +2928,18 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   backBtn: {
+    minHeight: 44,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 4,
-    paddingVertical: 12,
+    paddingVertical: 10,
     paddingHorizontal: 16,
     borderRadius: Radius.sm,
     backgroundColor: '#F4F6F0',
     borderWidth: 1,
-    borderColor: '#E8ECDF',
+    borderColor: '#E2E6DC',
+    ...(Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : null),
   },
   backBtnText: {
     fontSize: 12.5,
@@ -2807,14 +2947,16 @@ const styles = StyleSheet.create({
     color: '#121212',
   },
   cancelBtn: {
+    minHeight: 44,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 12,
+    paddingVertical: 10,
     paddingHorizontal: 16,
     borderRadius: Radius.sm,
     backgroundColor: '#F4F6F0',
     borderWidth: 1,
-    borderColor: '#E8ECDF',
+    borderColor: '#E2E6DC',
+    ...(Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : null),
   },
   cancelBtnText: {
     fontSize: 12.5,
@@ -2823,14 +2965,16 @@ const styles = StyleSheet.create({
   },
   nextBtn: {
     flex: 1,
+    minHeight: 48,
     backgroundColor: Colors.light.primary,
-    paddingVertical: 13,
+    paddingVertical: 12,
     paddingHorizontal: 16,
     borderRadius: Radius.sm,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
+    ...(Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : null),
   },
   nextBtnText: {
     fontSize: 12.5,
@@ -2839,14 +2983,18 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
   },
   quickSaveBtn: {
+    minHeight: 44,
+    alignSelf: 'center',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 4,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    ...(Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : null),
   },
   quickSaveText: {
-    fontSize: 11.5,
+    fontSize: 12,
     fontWeight: '700',
-    color: '#73786B',
+    color: '#5A5D54',
     textDecorationLine: 'underline',
   },
 });

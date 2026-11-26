@@ -1,17 +1,17 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
   Modal,
-  TouchableOpacity,
-  ScrollView,
   Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import { X, Bot, CheckCircle2, AlertCircle, ArrowRight, Sparkles } from 'lucide-react-native';
-import { Colors, Radius } from '@/constants/theme';
+import { Radius } from '@/constants/theme';
 import { Heading, Body, Label } from '@/components/atoms/typography';
 import { CvHealthMetrics } from '../cv.types';
 
@@ -26,6 +26,18 @@ export const HunterAuditModal: React.FC<HunterAuditModalProps> = ({
   metrics,
   onClose,
 }) => {
+  useEffect(() => {
+    if (Platform.OS !== 'web' || !visible) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown, true);
+    return () => window.removeEventListener('keydown', onKeyDown, true);
+  }, [onClose, visible]);
+
   if (!metrics) return null;
 
   const handleLaunchHunterChat = () => {
@@ -37,9 +49,8 @@ export const HunterAuditModal: React.FC<HunterAuditModalProps> = ({
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={styles.overlay}>
-        <TouchableOpacity
+        <Pressable
           style={StyleSheet.absoluteFill}
-          activeOpacity={1}
           onPress={onClose}
           accessibilityLabel="Close audit modal"
         />
@@ -49,17 +60,25 @@ export const HunterAuditModal: React.FC<HunterAuditModalProps> = ({
           <View style={styles.sheetHeader}>
             <View style={styles.headerLeft}>
               <View style={styles.hunterBadge}>
-                <Bot size={14} color="#121212" />
+                <Bot size={14} color="#2F4F00" />
                 <Label style={styles.hunterBadgeText}>HUNTER AI AUDIT</Label>
               </View>
               <Heading style={styles.sheetTitle}>Dossier Strength Review</Heading>
             </View>
-            <TouchableOpacity
+            <Pressable
               onPress={onClose}
-              style={styles.closeButton}
+              style={state => [
+                styles.closeButton,
+                state.pressed && styles.pressedFade,
+                Platform.OS === 'web' && (state as { focused?: boolean }).focused
+                  ? styles.webFocusRing
+                  : null,
+                Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : null,
+              ]}
+              accessibilityRole="button"
               accessibilityLabel="Close modal">
               <X size={18} color="#121212" />
-            </TouchableOpacity>
+            </Pressable>
           </View>
 
           <ScrollView
@@ -73,19 +92,19 @@ export const HunterAuditModal: React.FC<HunterAuditModalProps> = ({
                   <Label style={styles.summarySub}>OVERALL ATS READINESS</Label>
                   <Heading style={styles.summaryLevel}>{metrics.level}</Heading>
                 </View>
-                <View style={styles.scorePill}>
-                  <Text style={styles.scorePillNumber}>{metrics.score}</Text>
-                  <Text style={styles.scorePillMax}>/100</Text>
+                <View style={styles.scoreBadge}>
+                  <Text style={styles.scoreBadgeNumber}>{metrics.score}</Text>
+                  <Text style={styles.scoreBadgeMax}>/100</Text>
                 </View>
               </View>
               <Body style={styles.summaryDesc}>
-                Hunter analyzed your 8 core CV sections against standard hiring manager screening criteria and applicant tracking systems.
+                Review of your core CV sections against hiring screening structure and applicant tracking readability.
               </Body>
             </View>
 
             {/* Findings List */}
             <View style={styles.findingsSection}>
-              <Label style={styles.findingsHeader}>HUNTER AUDIT FINDINGS</Label>
+              <Label style={styles.findingsHeader}>AUDIT FINDINGS</Label>
               <View style={styles.findingsList}>
                 {metrics.auditItems.map((item, idx) => (
                   <View key={idx} style={styles.findingCard}>
@@ -112,7 +131,7 @@ export const HunterAuditModal: React.FC<HunterAuditModalProps> = ({
                       <Body style={styles.findingMessage}>{item.message}</Body>
                       {item.suggestion ? (
                         <View style={styles.suggestionBox}>
-                          <Sparkles size={11} color="#2F4F00" />
+                          <Sparkles size={12} color="#2F4F00" />
                           <Body style={styles.suggestionText}>{item.suggestion}</Body>
                         </View>
                       ) : null}
@@ -123,18 +142,24 @@ export const HunterAuditModal: React.FC<HunterAuditModalProps> = ({
             </View>
           </ScrollView>
 
-          {/* Action Footer: Connects to Hunter Chatbot */}
+          {/* Action Footer */}
           <View style={styles.footer}>
-            <TouchableOpacity
+            <Pressable
               onPress={handleLaunchHunterChat}
-              style={styles.chatButton}
-              activeOpacity={0.85}
+              style={state => [
+                styles.chatButton,
+                state.pressed && styles.pressedFade,
+                Platform.OS === 'web' && (state as { focused?: boolean }).focused
+                  ? styles.webFocusRing
+                  : null,
+                Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : null,
+              ]}
               accessibilityRole="button"
               accessibilityLabel="Consult Hunter in chat">
               <Bot size={16} color="#121212" />
               <Label style={styles.chatButtonText}>CONSULT HUNTER IN CHAT</Label>
               <ArrowRight size={15} color="#121212" />
-            </TouchableOpacity>
+            </Pressable>
           </View>
         </View>
       </View>
@@ -149,13 +174,16 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   sheetContainer: {
+    width: '100%',
+    maxWidth: 540,
+    alignSelf: 'center',
     backgroundColor: '#FFFFFF',
     borderTopLeftRadius: Radius.lg,
     borderTopRightRadius: Radius.lg,
-    height: '80%',
-    maxHeight: '85%',
+    height: '82%',
+    maxHeight: '88%',
     borderWidth: 1,
-    borderColor: '#E8ECDF',
+    borderColor: '#E2E6DC',
   },
   sheetHeader: {
     flexDirection: 'row',
@@ -173,7 +201,7 @@ const styles = StyleSheet.create({
   hunterBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 5,
   },
   hunterBadgeText: {
     fontSize: 10,
@@ -182,15 +210,17 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   sheetTitle: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '800',
     color: '#121212',
   },
   closeButton: {
-    width: 32,
-    height: 32,
-    borderRadius: Radius.full,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: '#F4F6F0',
+    borderWidth: 1,
+    borderColor: '#E2E6DC',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -207,7 +237,7 @@ const styles = StyleSheet.create({
     borderRadius: Radius.md,
     padding: 16,
     borderWidth: 1,
-    borderColor: '#E8ECDF',
+    borderColor: '#E2E6DC',
     gap: 8,
   },
   summaryTop: {
@@ -226,28 +256,28 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: '#121212',
   },
-  scorePill: {
+  scoreBadge: {
     flexDirection: 'row',
     alignItems: 'baseline',
     backgroundColor: '#EFFCD3',
     paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: Radius.full,
+    paddingVertical: 5,
+    borderRadius: Radius.sm,
     borderWidth: 1,
     borderColor: '#B8F23E',
   },
-  scorePillNumber: {
+  scoreBadgeNumber: {
     fontSize: 16,
     fontWeight: '900',
     color: '#2F4F00',
   },
-  scorePillMax: {
+  scoreBadgeMax: {
     fontSize: 11,
     fontWeight: '700',
     color: '#2F4F00',
   },
   summaryDesc: {
-    fontSize: 12,
+    fontSize: 12.5,
     lineHeight: 18,
     color: '#5A5D54',
   },
@@ -269,7 +299,7 @@ const styles = StyleSheet.create({
     gap: 12,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#E8ECDF',
+    borderColor: '#E2E6DC',
     borderRadius: Radius.md,
     padding: 14,
   },
@@ -284,6 +314,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    gap: 8,
   },
   findingSectionName: {
     fontSize: 13,
@@ -291,12 +322,12 @@ const styles = StyleSheet.create({
     color: '#121212',
   },
   findingTypeBadge: {
-    fontSize: 9,
+    fontSize: 9.5,
     fontWeight: '800',
     letterSpacing: 0.4,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: Radius.full,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: Radius.sm,
   },
   findingTypeStrength: {
     backgroundColor: '#EFFCD3',
@@ -316,16 +347,16 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     gap: 6,
     backgroundColor: '#F9FAF7',
-    padding: 8,
+    padding: 9,
     borderRadius: Radius.sm,
     marginTop: 4,
     borderWidth: 1,
-    borderColor: '#E8ECDF',
+    borderColor: '#E2E6DC',
   },
   suggestionText: {
     flex: 1,
-    fontSize: 11,
-    lineHeight: 15,
+    fontSize: 11.5,
+    lineHeight: 16,
     color: '#2F4F00',
     fontWeight: '500',
   },
@@ -337,8 +368,10 @@ const styles = StyleSheet.create({
     borderTopColor: '#F4F6F0',
   },
   chatButton: {
+    minHeight: 48,
     backgroundColor: '#B8F23E',
-    paddingVertical: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
     borderRadius: Radius.full,
     flexDirection: 'row',
     alignItems: 'center',
@@ -351,4 +384,13 @@ const styles = StyleSheet.create({
     color: '#121212',
     letterSpacing: 0.5,
   },
+  pressedFade: {
+    opacity: 0.82,
+  },
+  webFocusRing: {
+    outlineWidth: 2,
+    outlineStyle: 'solid',
+    outlineColor: '#121212',
+    outlineOffset: 2,
+  } as any,
 });

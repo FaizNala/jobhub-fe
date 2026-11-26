@@ -1,40 +1,48 @@
 import React, { useState } from 'react';
-import { View, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import {
+  ActivityIndicator,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import * as Haptics from 'expo-haptics';
 import {
-  FileText,
-  Eye,
-  Pencil,
-  MapPin,
-  Mail,
-  Phone,
-  Globe,
+  AlertCircle,
   Code2,
+  Eye,
+  FileText,
+  Globe,
   Link2,
+  Mail,
+  MapPin,
+  Pencil,
+  Phone,
 } from 'lucide-react-native';
 import { Colors, Radius } from '@/constants/theme';
-import { Display, Heading, Body, Label } from '@/components/atoms/typography';
+import { Body, Display, Heading, Label } from '@/components/atoms/typography';
 import {
+  CvBuilderModal,
+  CvCertificationsSection,
+  CvDocumentPreview,
+  CvEducationSection,
+  CvExperienceList,
+  CvHealthIndexCard,
+  CvOrganizationSection,
+  CvProjectsSection,
+  CvSkillsCategorizedSection,
+  HunterAuditModal,
   useCandidateProfile,
   useCvHealth,
-  CvExperienceList,
-  CvProjectsSection,
-  CvOrganizationSection,
-  CvEducationSection,
-  CvSkillsCategorizedSection,
-  CvCertificationsSection,
-  CvHealthIndexCard,
-  CvDocumentPreview,
-  HunterAuditModal,
-  CvBuilderModal,
 } from '@/modules/cv-studio';
 
 type ViewMode = 'builder' | 'preview';
 
 export default function CvStudioScreen() {
-  const { profile, updateProfile } = useCandidateProfile();
+  const { profile, isLoading, error, getProfile, updateProfile } = useCandidateProfile();
   const cvHealth = useCvHealth(profile);
 
   const [viewMode, setViewMode] = useState<ViewMode>('builder');
@@ -47,9 +55,9 @@ export default function CvStudioScreen() {
     setViewMode(mode);
   };
 
-  const displayName = profile?.fullName || 'Alex Vance';
-  const displayRole = profile?.headline || 'Senior Mobile Engineer';
-  const displayLocation = profile?.location || 'San Francisco, CA';
+  const displayName = profile?.fullName || 'Your Name';
+  const displayRole = profile?.headline || 'Add your professional headline';
+  const displayLocation = profile?.location || 'Set location';
   const displaySummary = profile?.summary || '';
   const displayContact = profile?.contact;
   const hardSkills = profile?.hardSkills || profile?.skills || [];
@@ -67,179 +75,211 @@ export default function CvStudioScreen() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}>
-        {/* Screen Header */}
-        <View style={styles.header}>
-          <View style={styles.badgeRow}>
-            <View style={styles.iconCircle}>
-              <FileText size={13} color="#121212" />
+        <View style={styles.pageColumn}>
+          {/* Screen Header */}
+          <View style={styles.header}>
+            <View style={styles.badgeRow}>
+              <View style={styles.iconCircle}>
+                <FileText size={13} color="#121212" />
+              </View>
+              <Label style={styles.badgeText}>CAREER DOSSIER STUDIO</Label>
             </View>
-            <Label style={styles.badgeText}>CAREER DOSSIER STUDIO</Label>
+
+            <View style={styles.titleRow}>
+              <Display style={styles.title}>
+                CV STUDIO &{'\n'}BUILDER
+              </Display>
+
+              <Pressable
+                onPress={() => setIsEditModalVisible(true)}
+                style={state => [
+                  styles.editHeaderButton,
+                  state.pressed && styles.pressedFade,
+                  Platform.OS === 'web' && (state as { focused?: boolean }).focused
+                    ? styles.webFocusRing
+                    : null,
+                  Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : null,
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel="Edit master dossier">
+                <Pencil size={13} color="#121212" />
+                <Label style={styles.editHeaderText}>BUILD CV</Label>
+              </Pressable>
+            </View>
+
+            {/* Segmented View Mode Toggle */}
+            <View style={styles.toggleRow}>
+              <Pressable
+                onPress={() => handleToggleViewMode('builder')}
+                style={state => [
+                  styles.togglePill,
+                  viewMode === 'builder' && styles.togglePillActive,
+                  state.pressed && styles.pressedFade,
+                  Platform.OS === 'web' && (state as { focused?: boolean }).focused
+                    ? styles.webFocusRing
+                    : null,
+                  Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : null,
+                ]}
+                accessibilityRole="tab"
+                accessibilityState={{ selected: viewMode === 'builder' }}>
+                <FileText
+                  size={14}
+                  color={viewMode === 'builder' ? '#121212' : '#5A5D54'}
+                />
+                <Label
+                  style={[
+                    styles.toggleText,
+                    viewMode === 'builder' && styles.toggleTextActive,
+                  ]}>
+                  MODULAR BUILDER
+                </Label>
+              </Pressable>
+
+              <Pressable
+                onPress={() => handleToggleViewMode('preview')}
+                style={state => [
+                  styles.togglePill,
+                  viewMode === 'preview' && styles.togglePillActive,
+                  state.pressed && styles.pressedFade,
+                  Platform.OS === 'web' && (state as { focused?: boolean }).focused
+                    ? styles.webFocusRing
+                    : null,
+                  Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : null,
+                ]}
+                accessibilityRole="tab"
+                accessibilityState={{ selected: viewMode === 'preview' }}>
+                <Eye
+                  size={14}
+                  color={viewMode === 'preview' ? '#121212' : '#5A5D54'}
+                />
+                <Label
+                  style={[
+                    styles.toggleText,
+                    viewMode === 'preview' && styles.toggleTextActive,
+                  ]}>
+                  ATS PREVIEW & EXPORT
+                </Label>
+              </Pressable>
+            </View>
           </View>
 
-          <View style={styles.titleRow}>
-            <Display style={styles.title}>
-              CV STUDIO &{'\n'}BUILDER
-            </Display>
-
-            <TouchableOpacity
-              onPress={() => setIsEditModalVisible(true)}
-              style={styles.editHeaderButton}
-              activeOpacity={0.8}
-              accessibilityRole="button"
-              accessibilityLabel="Edit master dossier">
-              <Pencil size={13} color="#121212" />
-              <Label style={styles.editHeaderText}>BUILD CV</Label>
-            </TouchableOpacity>
-          </View>
-
-          {/* Segmented View Mode Toggle: Builder vs. Document Preview */}
-          <View style={styles.toggleRow}>
-            <TouchableOpacity
-              onPress={() => handleToggleViewMode('builder')}
-              style={[
-                styles.togglePill,
-                viewMode === 'builder' && styles.togglePillActive,
-              ]}
-              activeOpacity={0.85}
-              accessibilityRole="tab"
-              accessibilityState={{ selected: viewMode === 'builder' }}>
-              <FileText
-                size={14}
-                color={viewMode === 'builder' ? '#121212' : '#5A5D54'}
+          {/* Loading, Error, Empty, or Data Views */}
+          {isLoading && !profile ? (
+            <View style={styles.stateBox} accessibilityLiveRegion="polite">
+              <ActivityIndicator size="small" color="#121212" />
+              <Body style={styles.stateBody}>Loading your CV dossier...</Body>
+            </View>
+          ) : error && !profile ? (
+            <View style={styles.stateBox} accessibilityLiveRegion="polite">
+              <AlertCircle size={22} color="#991B1B" />
+              <Heading style={styles.stateTitle}>Unable to load CV studio</Heading>
+              <Body style={styles.stateBody}>{error}</Body>
+              <Pressable
+                onPress={() => getProfile()}
+                style={state => [
+                  styles.retryButton,
+                  state.pressed && styles.pressedFade,
+                  Platform.OS === 'web' && (state as { focused?: boolean }).focused
+                    ? styles.webFocusRing
+                    : null,
+                  Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : null,
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel="Retry loading CV dossier">
+                <Label style={styles.retryButtonText}>RETRY</Label>
+              </Pressable>
+            </View>
+          ) : !profile ? (
+            <View style={styles.stateBox}>
+              <Heading style={styles.stateTitle}>Start building your CV</Heading>
+              <Body style={styles.stateBody}>
+                Open the builder to add your contact profile, experience, skills, and education.
+              </Body>
+            </View>
+          ) : viewMode === 'builder' ? (
+            <>
+              <CvHealthIndexCard
+                metrics={cvHealth}
+                onAuditPress={() => setIsHunterAuditVisible(true)}
               />
-              <Label
-                style={[
-                  styles.toggleText,
-                  viewMode === 'builder' && styles.toggleTextActive,
-                ]}>
-                MODULAR BUILDER
-              </Label>
-            </TouchableOpacity>
 
-            <TouchableOpacity
-              onPress={() => handleToggleViewMode('preview')}
-              style={[
-                styles.togglePill,
-                viewMode === 'preview' && styles.togglePillActive,
-              ]}
-              activeOpacity={0.85}
-              accessibilityRole="tab"
-              accessibilityState={{ selected: viewMode === 'preview' }}>
-              <Eye
-                size={14}
-                color={viewMode === 'preview' ? '#121212' : '#5A5D54'}
+              {/* Candidate Identity & Contact Summary */}
+              <View style={styles.identityCard}>
+                <View style={styles.identityTop}>
+                  <View style={styles.identityTitleBlock}>
+                    <Heading style={styles.identityName}>{displayName}</Heading>
+                    <Body style={styles.identityRole}>{displayRole}</Body>
+                  </View>
+                  <View style={styles.locationTag}>
+                    <MapPin size={11} color="#2F4F00" />
+                    <Body style={styles.locationTagText}>{displayLocation}</Body>
+                  </View>
+                </View>
+
+                <View style={styles.contactsRow}>
+                  {displayContact?.email ? (
+                    <View style={styles.contactItem}>
+                      <Mail size={12} color="#5A5D54" />
+                      <Body style={styles.contactItemText}>{displayContact.email}</Body>
+                    </View>
+                  ) : null}
+                  {displayContact?.phone ? (
+                    <View style={styles.contactItem}>
+                      <Phone size={12} color="#5A5D54" />
+                      <Body style={styles.contactItemText}>{displayContact.phone}</Body>
+                    </View>
+                  ) : null}
+                  {displayContact?.portfolio ? (
+                    <View style={styles.contactItem}>
+                      <Globe size={12} color="#5A5D54" />
+                      <Body style={styles.contactItemText}>
+                        {displayContact.portfolio.replace(/^https?:\/\//, '')}
+                      </Body>
+                    </View>
+                  ) : null}
+                  {displayContact?.github ? (
+                    <View style={styles.contactItem}>
+                      <Code2 size={12} color="#5A5D54" />
+                      <Body style={styles.contactItemText}>{displayContact.github}</Body>
+                    </View>
+                  ) : null}
+                  {displayContact?.linkedin ? (
+                    <View style={styles.contactItem}>
+                      <Link2 size={12} color="#5A5D54" />
+                      <Body style={styles.contactItemText}>{displayContact.linkedin}</Body>
+                    </View>
+                  ) : null}
+                </View>
+
+                {displaySummary ? (
+                  <View style={styles.summaryContainer}>
+                    <Body style={styles.summaryText}>{displaySummary}</Body>
+                  </View>
+                ) : null}
+              </View>
+
+              <CvSkillsCategorizedSection
+                hardSkills={hardSkills}
+                softSkills={softSkills}
               />
-              <Label
-                style={[
-                  styles.toggleText,
-                  viewMode === 'preview' && styles.toggleTextActive,
-                ]}>
-                ATS PREVIEW & EXPORT
-              </Label>
-            </TouchableOpacity>
-          </View>
+              <CvExperienceList experiences={experiences} />
+              <CvProjectsSection projects={projects} />
+              <CvOrganizationSection organizations={organizations} />
+              <CvEducationSection education={education} />
+              <CvCertificationsSection certifications={certifications} />
+            </>
+          ) : (
+            <CvDocumentPreview profile={profile} />
+          )}
         </View>
-
-        {viewMode === 'builder' ? (
-          <>
-            {/* CV Health & Completeness Benchmark */}
-            <CvHealthIndexCard
-              metrics={cvHealth}
-              onAuditPress={() => setIsHunterAuditVisible(true)}
-            />
-
-            {/* Candidate Identity & Contact Summary */}
-            <View style={styles.identityCard}>
-              <View style={styles.identityTop}>
-                <View style={styles.identityTitleBlock}>
-                  <Heading style={styles.identityName}>{displayName}</Heading>
-                  <Body style={styles.identityRole}>{displayRole}</Body>
-                </View>
-                <View style={styles.locationTag}>
-                  <MapPin size={11} color="#2F4F00" />
-                  <Body style={styles.locationTagText}>{displayLocation}</Body>
-                </View>
-              </View>
-
-              {/* Contact Links */}
-              <View style={styles.contactsRow}>
-                {displayContact?.email ? (
-                  <View style={styles.contactItem}>
-                    <Mail size={12} color="#5A5D54" />
-                    <Body style={styles.contactItemText}>{displayContact.email}</Body>
-                  </View>
-                ) : null}
-                {displayContact?.phone ? (
-                  <View style={styles.contactItem}>
-                    <Phone size={12} color="#5A5D54" />
-                    <Body style={styles.contactItemText}>{displayContact.phone}</Body>
-                  </View>
-                ) : null}
-                {displayContact?.portfolio ? (
-                  <View style={styles.contactItem}>
-                    <Globe size={12} color="#5A5D54" />
-                    <Body style={styles.contactItemText}>
-                      {displayContact.portfolio.replace(/^https?:\/\//, '')}
-                    </Body>
-                  </View>
-                ) : null}
-                {displayContact?.github ? (
-                  <View style={styles.contactItem}>
-                    <Code2 size={12} color="#5A5D54" />
-                    <Body style={styles.contactItemText}>{displayContact.github}</Body>
-                  </View>
-                ) : null}
-                {displayContact?.linkedin ? (
-                  <View style={styles.contactItem}>
-                    <Link2 size={12} color="#5A5D54" />
-                    <Body style={styles.contactItemText}>{displayContact.linkedin}</Body>
-                  </View>
-                ) : null}
-              </View>
-
-              {/* Summary Paragraph */}
-              {displaySummary ? (
-                <View style={styles.summaryContainer}>
-                  <Body style={styles.summaryText}>{displaySummary}</Body>
-                </View>
-              ) : null}
-            </View>
-
-            {/* 1. Technical & Soft Skills Inventory */}
-            <CvSkillsCategorizedSection
-              hardSkills={hardSkills}
-              softSkills={softSkills}
-            />
-
-            {/* 2. Work Experience (Google XYZ Highlights) */}
-            <CvExperienceList experiences={experiences} />
-
-            {/* 3. Featured Projects */}
-            <CvProjectsSection projects={projects} />
-
-            {/* 4. Leadership & Organizations */}
-            <CvOrganizationSection organizations={organizations} />
-
-            {/* 5. Education Credentials */}
-            <CvEducationSection education={education} />
-
-            {/* 6. Certifications & Licenses */}
-            <CvCertificationsSection certifications={certifications} />
-          </>
-        ) : (
-          /* Document Sheet View: ATS-formatted printable resume */
-          profile && <CvDocumentPreview profile={profile} />
-        )}
       </ScrollView>
 
-      {/* Hunter AI Audit Modal */}
       <HunterAuditModal
         visible={isHunterAuditVisible}
         metrics={cvHealth}
         onClose={() => setIsHunterAuditVisible(false)}
       />
 
-      {/* Comprehensive CV Dossier Builder Modal */}
       <CvBuilderModal
         visible={isEditModalVisible}
         profile={profile}
@@ -259,6 +299,11 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: 110,
+  },
+  pageColumn: {
+    width: '100%',
+    maxWidth: 720,
+    alignSelf: 'center',
   },
   header: {
     paddingHorizontal: 20,
@@ -291,6 +336,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-end',
+    gap: 12,
   },
   title: {
     fontSize: 26,
@@ -299,12 +345,13 @@ const styles = StyleSheet.create({
     fontWeight: '900',
   },
   editHeaderButton: {
+    minHeight: 44,
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: 6,
     backgroundColor: '#FFFFFF',
-    paddingHorizontal: 12,
-    paddingVertical: 7,
+    paddingHorizontal: 14,
     borderRadius: Radius.full,
     borderWidth: 1.5,
     borderColor: Colors.light.border,
@@ -319,17 +366,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     backgroundColor: '#EAEFE2',
     borderRadius: Radius.full,
-    padding: 3,
+    padding: 4,
     marginTop: 4,
     gap: 4,
   },
   togglePill: {
     flex: 1,
+    minHeight: 44,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    paddingVertical: 8,
+    paddingHorizontal: 10,
     borderRadius: Radius.full,
   },
   togglePillActive: {
@@ -349,6 +397,41 @@ const styles = StyleSheet.create({
   toggleTextActive: {
     color: '#121212',
     fontWeight: '800',
+  },
+  stateBox: {
+    paddingHorizontal: 24,
+    paddingVertical: 56,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+  },
+  stateTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#121212',
+    textAlign: 'center',
+  },
+  stateBody: {
+    fontSize: 13,
+    lineHeight: 19,
+    color: '#5A5D54',
+    textAlign: 'center',
+    maxWidth: 300,
+  },
+  retryButton: {
+    minHeight: 44,
+    paddingHorizontal: 20,
+    borderRadius: Radius.full,
+    backgroundColor: '#121212',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 4,
+  },
+  retryButtonText: {
+    fontSize: 11.5,
+    fontWeight: '700',
+    letterSpacing: 0.6,
+    color: '#FFFFFF',
   },
   identityCard: {
     backgroundColor: '#FFFFFF',
@@ -384,9 +467,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
     backgroundColor: '#EFFCD3',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: Radius.full,
+    paddingHorizontal: 9,
+    paddingVertical: 4.5,
+    borderRadius: Radius.sm,
     borderWidth: 1,
     borderColor: '#B8F23E',
   },
@@ -417,12 +500,21 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: Radius.sm,
     borderWidth: 1,
-    borderColor: '#E8ECDF',
-    marginTop: 10,
+    borderColor: '#E2E6DC',
+    marginTop: 6,
   },
   summaryText: {
     fontSize: 12,
     lineHeight: 20,
     color: '#343830',
   },
+  pressedFade: {
+    opacity: 0.8,
+  },
+  webFocusRing: {
+    outlineWidth: 2,
+    outlineStyle: 'solid',
+    outlineColor: '#121212',
+    outlineOffset: 2,
+  } as any,
 });

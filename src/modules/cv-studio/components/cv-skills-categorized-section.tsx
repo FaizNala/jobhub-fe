@@ -72,7 +72,7 @@ const styles = StyleSheet.create({
   totalBadge: {
     fontSize: 10.5,
     fontWeight: '700',
-    color: '#73786B',
+    color: '#5A5D54',
   },
   card: {
     backgroundColor: '#FFFFFF',
@@ -102,7 +102,7 @@ const styles = StyleSheet.create({
     borderColor: '#B8F23E',
     paddingHorizontal: 10,
     paddingVertical: 5,
-    borderRadius: Radius.full,
+    borderRadius: Radius.sm,
   },
   hardChipText: {
     fontSize: 11,
@@ -112,10 +112,10 @@ const styles = StyleSheet.create({
   softChip: {
     backgroundColor: '#F4F6F0',
     borderWidth: 1,
-    borderColor: '#E8ECDF',
+    borderColor: '#E2E6DC',
     paddingHorizontal: 10,
     paddingVertical: 5,
-    borderRadius: Radius.full,
+    borderRadius: Radius.sm,
   },
   softChipText: {
     fontSize: 11,

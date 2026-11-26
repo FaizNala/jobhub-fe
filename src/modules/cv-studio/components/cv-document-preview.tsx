@@ -1,25 +1,32 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import { Share2, Check } from 'lucide-react-native';
+import { Check, Printer, Share2 } from 'lucide-react-native';
 import { Radius } from '@/constants/theme';
-import { Heading, Body, Label } from '@/components/atoms/typography';
+import { Body, Heading, Label } from '@/components/atoms/typography';
 import { CandidateProfile } from '../cv.types';
-import { shareResumePdf } from '../cv-pdf.service';
+import { exportResumePdf, shareResumePdf } from '../cv-pdf.service';
 
 export interface CvDocumentPreviewProps {
   profile: CandidateProfile;
 }
 
 export const CvDocumentPreview: React.FC<CvDocumentPreviewProps> = ({ profile }) => {
-  const [shared, setShared] = useState(false);
+  const [exported, setExported] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
 
-  const handleShare = async () => {
+  const handleExport = async () => {
     Haptics.selectionAsync().catch(() => {});
-    const success = await shareResumePdf(profile);
+    setExportError(null);
+    const success =
+      Platform.OS === 'web'
+        ? await exportResumePdf(profile)
+        : await shareResumePdf(profile);
     if (success) {
-      setShared(true);
-      setTimeout(() => setShared(false), 2500);
+      setExported(true);
+      setTimeout(() => setExported(false), 2400);
+    } else {
+      setExportError('Unable to export PDF on this device right now.');
     }
   };
 
@@ -29,37 +36,62 @@ export const CvDocumentPreview: React.FC<CvDocumentPreviewProps> = ({ profile })
     profile.contact?.email,
     profile.contact?.linkedin,
     profile.contact?.github,
+    profile.contact?.portfolio,
   ].filter(Boolean);
+
+  const hardOrFallbackSkills =
+    profile.hardSkills?.length > 0 ? profile.hardSkills : profile.skills || [];
 
   return (
     <View style={styles.container}>
-      {/* Action Toolbar: Share button aligned to the right */}
+      {/* Action Toolbar */}
       <View style={styles.toolbar}>
-        <TouchableOpacity
-          onPress={handleShare}
-          style={styles.btnPrimary}
-          activeOpacity={0.85}
+        <Body style={styles.toolbarHint}>A4 ATS Print Layout</Body>
+        <Pressable
+          onPress={handleExport}
+          style={state => [
+            styles.btnPrimary,
+            state.pressed && styles.pressedFade,
+            Platform.OS === 'web' && (state as { focused?: boolean }).focused
+              ? styles.webFocusRing
+              : null,
+            Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : null,
+          ]}
           accessibilityRole="button"
-          accessibilityLabel="Share CV as PDF">
-          {shared ? (
-            <Check size={13} color="#B8F23E" />
+          accessibilityLabel={
+            Platform.OS === 'web' ? 'Print or save CV as PDF' : 'Export CV as PDF'
+          }>
+          {exported ? (
+            <Check size={14} color="#B8F23E" strokeWidth={2.5} />
+          ) : Platform.OS === 'web' ? (
+            <Printer size={14} color="#FFFFFF" strokeWidth={2.2} />
           ) : (
-            <Share2 size={13} color="#FFFFFF" />
+            <Share2 size={14} color="#FFFFFF" strokeWidth={2.2} />
           )}
-          <Label style={styles.btnPrimaryText}>{shared ? 'SHARED' : 'SHARE'}</Label>
-        </TouchableOpacity>
+          <Label style={styles.btnPrimaryText}>
+            {exported
+              ? 'READY'
+              : Platform.OS === 'web'
+              ? 'PRINT / SAVE PDF'
+              : 'EXPORT PDF'}
+          </Label>
+        </Pressable>
       </View>
+
+      {exportError ? (
+        <View style={styles.errorBanner} accessibilityLiveRegion="polite">
+          <Text style={styles.errorText}>{exportError}</Text>
+        </View>
+      ) : null}
 
       {/* Realistic ATS Document Paper Sheet */}
       <View nativeID="ats-cv-paper" style={styles.paper}>
-        {/* Document Header */}
         <View style={styles.docHeader}>
           <Heading style={styles.docName}>{profile.fullName}</Heading>
           <Body style={styles.docHeadline}>{profile.headline}</Body>
           <Body style={styles.docContactLine}>{contactItems.join('  |  ')}</Body>
         </View>
 
-        {/* Section: Professional Summary */}
         {profile.summary ? (
           <View style={styles.section}>
             <Heading style={styles.sectionHeading}>PROFESSIONAL SUMMARY</Heading>
@@ -68,29 +100,25 @@ export const CvDocumentPreview: React.FC<CvDocumentPreviewProps> = ({ profile })
           </View>
         ) : null}
 
-        {/* Section: Skills & Competencies */}
-        {(profile.hardSkills?.length > 0 || profile.softSkills?.length > 0 || (profile.skills && profile.skills.length > 0)) ? (
+        {(hardOrFallbackSkills.length > 0 || profile.softSkills?.length > 0) ? (
           <View style={styles.section}>
             <Heading style={styles.sectionHeading}>TECHNICAL & PROFESSIONAL SKILLS</Heading>
             <View style={styles.rule} />
-            {(profile.hardSkills?.length > 0 || (profile.skills && profile.skills.length > 0)) ? (
+            {hardOrFallbackSkills.length > 0 ? (
               <View style={styles.skillRow}>
-                <Body style={styles.skillLabel}>Technical Skills:</Body>
-                <Body style={styles.skillList}>
-                  {(profile.hardSkills?.length > 0 ? profile.hardSkills : profile.skills || []).join(', ')}
-                </Body>
+                <Body style={styles.skillLabel}>Core & Technical Skills:</Body>
+                <Body style={styles.skillList}>{hardOrFallbackSkills.join(', ')}</Body>
               </View>
             ) : null}
             {profile.softSkills?.length > 0 ? (
               <View style={styles.skillRow}>
-                <Body style={styles.skillLabel}>Soft Skills:</Body>
+                <Body style={styles.skillLabel}>Leadership & Soft Skills:</Body>
                 <Body style={styles.skillList}>{profile.softSkills.join(', ')}</Body>
               </View>
             ) : null}
           </View>
         ) : null}
 
-        {/* Section: Work Experience */}
         {profile.experiences && profile.experiences.length > 0 ? (
           <View style={styles.section}>
             <Heading style={styles.sectionHeading}>WORK EXPERIENCE</Heading>
@@ -123,7 +151,6 @@ export const CvDocumentPreview: React.FC<CvDocumentPreviewProps> = ({ profile })
           </View>
         ) : null}
 
-        {/* Section: Featured Projects */}
         {profile.projects && profile.projects.length > 0 ? (
           <View style={styles.section}>
             <Heading style={styles.sectionHeading}>PROJECTS</Heading>
@@ -140,7 +167,7 @@ export const CvDocumentPreview: React.FC<CvDocumentPreviewProps> = ({ profile })
 
                 {proj.techStack?.length > 0 ? (
                   <Body style={styles.projectStack}>
-                    Technologies: {proj.techStack.join(', ')}
+                    Tools & Stack: {proj.techStack.join(', ')}
                   </Body>
                 ) : null}
 
@@ -163,7 +190,6 @@ export const CvDocumentPreview: React.FC<CvDocumentPreviewProps> = ({ profile })
           </View>
         ) : null}
 
-        {/* Section: Leadership & Community */}
         {profile.organizations && profile.organizations.length > 0 ? (
           <View style={styles.section}>
             <Heading style={styles.sectionHeading}>LEADERSHIP & ORGANIZATIONS</Heading>
@@ -192,7 +218,6 @@ export const CvDocumentPreview: React.FC<CvDocumentPreviewProps> = ({ profile })
           </View>
         ) : null}
 
-        {/* Section: Education */}
         {profile.education && profile.education.length > 0 ? (
           <View style={styles.section}>
             <Heading style={styles.sectionHeading}>EDUCATION</Heading>
@@ -222,7 +247,6 @@ export const CvDocumentPreview: React.FC<CvDocumentPreviewProps> = ({ profile })
           </View>
         ) : null}
 
-        {/* Section: Certifications */}
         {profile.certifications && profile.certifications.length > 0 ? (
           <View style={styles.section}>
             <Heading style={styles.sectionHeading}>CERTIFICATIONS</Heading>
@@ -231,7 +255,7 @@ export const CvDocumentPreview: React.FC<CvDocumentPreviewProps> = ({ profile })
               <View key={cert.id} style={styles.certRow}>
                 <Body style={styles.bulletSymbol}>•</Body>
                 <Body style={styles.certText}>
-                  <Body style={styles.certName}>{cert.name}</Body>, {cert.issuer} ({cert.issueDate})
+                  <Body style={styles.certName}>{cert.name}</Body> - {cert.issuer} ({cert.issueDate})
                 </Body>
               </View>
             ))}
@@ -245,55 +269,57 @@ export const CvDocumentPreview: React.FC<CvDocumentPreviewProps> = ({ profile })
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 20,
-    marginTop: 20,
-    gap: 16,
+    marginTop: 18,
+    gap: 14,
   },
   toolbar: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    gap: 8,
+    gap: 10,
   },
-  btnOutline: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1.5,
-    borderColor: '#D8DEC9',
-    paddingHorizontal: 13,
-    paddingVertical: 7,
-    borderRadius: Radius.full,
-  },
-  btnOutlineText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#121212',
-    letterSpacing: 0.3,
+  toolbarHint: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#5A5D54',
   },
   btnPrimary: {
+    minHeight: 44,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    justifyContent: 'center',
+    gap: 7,
     backgroundColor: '#121212',
-    paddingHorizontal: 15,
-    paddingVertical: 7,
+    paddingHorizontal: 16,
     borderRadius: Radius.full,
   },
   btnPrimaryText: {
-    fontSize: 11,
-    fontWeight: '700',
+    fontSize: 11.5,
+    fontWeight: '800',
     color: '#FFFFFF',
-    letterSpacing: 0.3,
+    letterSpacing: 0.4,
+  },
+  errorBanner: {
+    backgroundColor: '#FEE2E2',
+    borderWidth: 1,
+    borderColor: '#FCA5A5',
+    borderRadius: Radius.sm,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  errorText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#991B1B',
   },
   paper: {
     backgroundColor: '#FFFFFF',
     borderRadius: Radius.sm,
-    padding: 28,
+    padding: 26,
     borderWidth: 1,
     borderColor: '#D8DEC9',
     gap: 16,
-    shadowColor: '#000000',
+    shadowColor: '#121212',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 8,
@@ -308,12 +334,14 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: '800',
     color: '#121212',
-    letterSpacing: 0.5,
+    letterSpacing: 0.4,
+    textAlign: 'center',
   },
   docHeadline: {
     fontSize: 12.5,
     fontWeight: '600',
     color: '#2F4F00',
+    textAlign: 'center',
   },
   docContactLine: {
     fontSize: 11,
@@ -364,6 +392,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'baseline',
+    gap: 8,
   },
   entryTitleColumn: {
     flex: 1,
@@ -428,6 +457,7 @@ const styles = StyleSheet.create({
     marginTop: 3,
   },
   certText: {
+    flex: 1,
     fontSize: 11.5,
     color: '#2C3028',
   },
@@ -435,4 +465,13 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#121212',
   },
+  pressedFade: {
+    opacity: 0.82,
+  },
+  webFocusRing: {
+    outlineWidth: 2,
+    outlineStyle: 'solid',
+    outlineColor: '#121212',
+    outlineOffset: 2,
+  } as any,
 });

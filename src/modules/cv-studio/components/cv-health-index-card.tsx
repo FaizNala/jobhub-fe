@@ -1,8 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { ShieldCheck, CheckCircle2, AlertCircle, Bot, ArrowRight } from 'lucide-react-native';
-import { Colors, Radius } from '@/constants/theme';
+import { Radius } from '@/constants/theme';
 import { Display, Heading, Body, Label } from '@/components/atoms/typography';
 import { CvHealthMetrics } from '../cv.types';
 
@@ -28,16 +28,16 @@ export const CvHealthIndexCard: React.FC<CvHealthIndexCardProps> = ({
 
   return (
     <View style={styles.card}>
-      {/* Top Header: Title on left, Badge on right with safe flex layout */}
+      {/* Top Header */}
       <View style={styles.headerRow}>
         <Heading style={styles.cardTitle}>Dossier Strength</Heading>
         <View style={styles.levelBadge}>
-          <ShieldCheck size={12} color="#2F4F00" />
+          <ShieldCheck size={12} color="#121212" />
           <Label style={styles.levelText}>{level}</Label>
         </View>
       </View>
 
-      {/* Score & Progress Section */}
+      {/* Dark Inset Score & Progress Sub-Card */}
       <View style={styles.scoreCard}>
         <View style={styles.scoreMetaRow}>
           <View style={styles.scoreBlock}>
@@ -46,9 +46,9 @@ export const CvHealthIndexCard: React.FC<CvHealthIndexCardProps> = ({
           </View>
 
           <View style={styles.completenessBadge}>
-            <CheckCircle2 size={12} color="#2F4F00" />
+            <CheckCircle2 size={12} color="#B8F23E" />
             <Text style={styles.completenessText}>
-              {completedSections} of {totalSections} Sections Complete
+              {completedSections} of {totalSections} Complete
             </Text>
           </View>
         </View>
@@ -64,9 +64,9 @@ export const CvHealthIndexCard: React.FC<CvHealthIndexCardProps> = ({
           {topItems.map((item, idx) => (
             <View key={idx} style={styles.insightItem}>
               {item.type === 'strength' ? (
-                <CheckCircle2 size={13} color="#2F4F00" style={styles.insightIcon} />
+                <CheckCircle2 size={14} color="#B8F23E" style={styles.insightIcon} />
               ) : (
-                <AlertCircle size={13} color="#8A6508" style={styles.insightIcon} />
+                <AlertCircle size={14} color="#FBBF24" style={styles.insightIcon} />
               )}
               <Body style={styles.insightText} numberOfLines={2}>
                 <Text style={styles.insightStrong}>{item.section}:</Text> {item.message}
@@ -76,33 +76,42 @@ export const CvHealthIndexCard: React.FC<CvHealthIndexCardProps> = ({
         </View>
       ) : null}
 
-      {/* Action: Audit with Hunter */}
-      <TouchableOpacity
+      {/* Primary Action: Audit with Hunter */}
+      <Pressable
         onPress={handleAudit}
-        style={styles.auditBtn}
-        activeOpacity={0.85}
+        style={state => [
+          styles.auditBtn,
+          state.pressed && styles.pressedFade,
+          Platform.OS === 'web' && (state as { focused?: boolean }).focused
+            ? styles.webFocusRingLight
+            : null,
+          Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : null,
+        ]}
         accessibilityRole="button"
         accessibilityLabel="Review CV with Hunter AI">
         <View style={styles.auditBtnContent}>
-          <Bot size={15} color="#121212" />
-          <Label style={styles.auditBtnLabel}>Audit with Hunter</Label>
+          <Bot size={16} color="#121212" strokeWidth={2.3} />
+          <Label style={styles.auditBtnLabel}>AUDIT WITH HUNTER</Label>
         </View>
-        <ArrowRight size={13} color="#121212" />
-      </TouchableOpacity>
+        <ArrowRight size={15} color="#121212" strokeWidth={2.4} />
+      </Pressable>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#121212',
     borderRadius: Radius.lg,
     padding: 20,
     marginHorizontal: 20,
-    marginTop: 20,
-    borderWidth: 1.5,
-    borderColor: Colors.light.border,
+    marginTop: 18,
     gap: 14,
+    shadowColor: '#121212',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.14,
+    shadowRadius: 14,
+    elevation: 4,
   },
   headerRow: {
     flexDirection: 'row',
@@ -111,34 +120,32 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   cardTitle: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '800',
-    color: '#121212',
-    letterSpacing: 0.2,
+    color: '#FFFFFF',
+    letterSpacing: 0.1,
   },
   levelBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    backgroundColor: '#EFFCD3',
+    backgroundColor: '#B8F23E',
     paddingHorizontal: 9,
     paddingVertical: 4,
-    borderRadius: Radius.full,
-    borderWidth: 1,
-    borderColor: '#B8F23E',
+    borderRadius: Radius.sm,
   },
   levelText: {
     fontSize: 10.5,
     fontWeight: '800',
-    color: '#2F4F00',
+    color: '#121212',
     letterSpacing: 0.3,
   },
   scoreCard: {
-    backgroundColor: '#F9FAF7',
+    backgroundColor: '#1C1E1A',
     padding: 14,
     borderRadius: Radius.md,
     borderWidth: 1,
-    borderColor: '#E8ECDF',
+    borderColor: '#2A2D26',
     gap: 12,
   },
   scoreMetaRow: {
@@ -146,43 +153,43 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     gap: 8,
+    flexWrap: 'wrap',
   },
   scoreBlock: {
     flexDirection: 'row',
     alignItems: 'baseline',
-    gap: 3,
+    gap: 4,
   },
   scoreNumber: {
     fontSize: 28,
     fontWeight: '900',
-    color: '#121212',
+    color: '#FFFFFF',
     lineHeight: 30,
   },
   scoreDenom: {
-    fontSize: 12,
+    fontSize: 12.5,
     fontWeight: '600',
-    color: '#73786B',
+    color: '#D1D5DB',
   },
   completenessBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    backgroundColor: '#EFFCD3',
+    backgroundColor: 'rgba(184, 242, 62, 0.14)',
     paddingHorizontal: 10,
     paddingVertical: 5,
-    borderRadius: Radius.full,
+    borderRadius: Radius.sm,
     borderWidth: 1,
-    borderColor: '#B8F23E',
+    borderColor: 'rgba(184, 242, 62, 0.3)',
   },
   completenessText: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#2F4F00',
-    letterSpacing: 0.2,
+    color: '#B8F23E',
   },
   progressTrack: {
     height: 6,
-    backgroundColor: '#E8ECDF',
+    backgroundColor: '#2D3028',
     borderRadius: Radius.full,
     overflow: 'hidden',
   },
@@ -197,28 +204,28 @@ const styles = StyleSheet.create({
   insightItem: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: 7,
+    gap: 8,
   },
   insightIcon: {
     marginTop: 2,
+    flexShrink: 0,
   },
   insightText: {
     flex: 1,
-    fontSize: 11.5,
-    lineHeight: 16,
-    color: '#3A3D34',
+    fontSize: 12,
+    lineHeight: 17,
+    color: '#D1D5DB',
   },
   insightStrong: {
     fontWeight: '700',
-    color: '#121212',
+    color: '#FFFFFF',
   },
   auditBtn: {
-    backgroundColor: '#F4F6F0',
-    borderWidth: 1,
-    borderColor: '#E8ECDF',
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: Radius.md,
+    minHeight: 44,
+    backgroundColor: '#B8F23E',
+    paddingVertical: 11,
+    paddingHorizontal: 16,
+    borderRadius: Radius.full,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -229,9 +236,18 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   auditBtnLabel: {
-    fontSize: 11.5,
+    fontSize: 12,
     fontWeight: '800',
     color: '#121212',
-    letterSpacing: 0.3,
+    letterSpacing: 0.4,
   },
+  pressedFade: {
+    opacity: 0.85,
+  },
+  webFocusRingLight: {
+    outlineWidth: 2,
+    outlineStyle: 'solid',
+    outlineColor: '#FFFFFF',
+    outlineOffset: 2,
+  } as any,
 });

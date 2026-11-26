@@ -94,7 +94,7 @@ const styles = StyleSheet.create({
   countBadge: {
     fontSize: 10,
     fontWeight: '700',
-    color: '#73786B',
+    color: '#5A5D54',
     letterSpacing: 0.5,
   },
   list: {
@@ -145,9 +145,11 @@ const styles = StyleSheet.create({
   },
   periodPill: {
     backgroundColor: '#F4F6F0',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: Radius.full,
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: Radius.sm,
+    borderWidth: 1,
+    borderColor: '#E2E6DC',
   },
   periodText: {
     fontSize: 10,
