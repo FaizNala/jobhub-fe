@@ -1,24 +1,35 @@
-import React, { useState } from 'react';
-import { View, ScrollView, StyleSheet, Pressable } from 'react-native';
+import React, { useCallback, useMemo, useState } from 'react';
+import {
+  ActivityIndicator,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
-import { useRouter } from 'expo-router';
-import { Briefcase } from 'lucide-react-native';
+import { useFocusEffect } from 'expo-router';
+import { AlertCircle, Briefcase, SlidersHorizontal } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { Colors, Radius } from '@/constants/theme';
-import { Display, Heading, Body, Label } from '@/components/atoms/typography';
+import { Body, Display, Heading, Label } from '@/components/atoms/typography';
 import { Job, JobDetailModal } from '@/modules/jobs';
 import {
-  PipelineItem,
-  PipelineStage,
-  usePipeline,
-  PipelineStageTabs,
   PipelineCard,
+  PipelineEmptyState,
+  PipelineFilterModal,
+  PipelineItem,
+  PipelineSortOption,
   PipelineStageModal,
+  PipelineStageTabs,
+  PipelineWorkplaceFilter,
+  usePipeline,
 } from '@/modules/pipeline';
 
 const STAGE_LABELS: Record<string, string> = {
-  all: 'All Jobs',
+  all: 'All Applications',
   shortlisted: 'Shortlist',
   applied: 'Applied',
   interviewing: 'Interview',
@@ -27,13 +38,15 @@ const STAGE_LABELS: Record<string, string> = {
 };
 
 export default function JobsScreen() {
-  const router = useRouter();
   const {
     items,
     allItems,
     selectedStage,
     setSelectedStage,
     countsByStage,
+    isLoading,
+    error,
+    getAll,
     updateStage,
     addNote,
     remove,
@@ -41,68 +54,49 @@ export default function JobsScreen() {
 
   const [detailJob, setDetailJob] = useState<Job | null>(null);
   const [managingItem, setManagingItem] = useState<PipelineItem | null>(null);
+  const [filterVisible, setFilterVisible] = useState(false);
+  const [sortBy, setSortBy] = useState<PipelineSortOption>('updated');
+  const [workplaceFilter, setWorkplaceFilter] =
+    useState<PipelineWorkplaceFilter>('all');
 
-  const getEmptyCopy = (stage: PipelineStage | 'all') => {
-    const shortlistCount = countsByStage.shortlisted ?? 0;
-    const allCount = allItems.length;
+  useFocusEffect(
+    useCallback(() => {
+      getAll(undefined, { silent: allItems.length > 0 }).catch(() => {});
+    }, [allItems.length, getAll]),
+  );
 
-    switch (stage) {
-      case 'shortlisted':
-        return {
-          title: 'No Shortlisted Roles',
-          subtitle: 'Save vacancies from Explore to prepare and tailor your CV.',
-          actionLabel: 'EXPLORE VACANCIES',
-          onAction: () => router.push('/'),
-        };
-      case 'applied':
-        return {
-          title: 'No Applications Sent',
-          subtitle:
-            shortlistCount > 0
-              ? `You have ${shortlistCount} role${
-                  shortlistCount > 1 ? 's' : ''
-                } in Shortlist ready to apply.`
-              : 'Track submitted applications to monitor response times and loops.',
-          actionLabel: shortlistCount > 0 ? 'REVIEW SHORTLIST' : 'EXPLORE ROLES',
-          onAction: () => (shortlistCount > 0 ? setSelectedStage('shortlisted') : router.push('/')),
-        };
-      case 'interviewing':
-        return {
-          title: 'No Active Interviews',
-          subtitle: 'Roles with scheduled technical or behavioral rounds appear here.',
-          actionLabel: allCount > 0 ? 'VIEW ALL ROLES' : 'EXPLORE VACANCIES',
-          onAction: () => (allCount > 0 ? setSelectedStage('all') : router.push('/')),
-        };
-      case 'offered':
-        return {
-          title: 'No Offers Recorded',
-          subtitle: 'Progress through your interview loops to log compensation offers.',
-          actionLabel: allCount > 0 ? 'VIEW ALL ROLES' : 'EXPLORE VACANCIES',
-          onAction: () => (allCount > 0 ? setSelectedStage('all') : router.push('/')),
-        };
-      case 'scouted':
-        return {
-          title: 'No Scouted Vacancies',
-          subtitle: 'Prompt your Hunter Agent to scout Greenhouse and Lever boards.',
-          actionLabel: 'LAUNCH HUNTER AGENT',
-          onAction: () => router.push('/agent'),
-        };
-      case 'all':
-      default:
-        return {
-          title: 'No Tracked Applications',
-          subtitle: 'Save vacancies from Explore or have Hunter Agent scout matching roles.',
-          actionLabel: 'EXPLORE OPENINGS',
-          onAction: () => router.push('/'),
-        };
-    }
+  const activeFilterCount =
+    (sortBy !== 'updated' ? 1 : 0) + (workplaceFilter !== 'all' ? 1 : 0);
+
+  const visibleItems = useMemo(() => {
+    const filtered =
+      workplaceFilter === 'all'
+        ? [...items]
+        : items.filter(item => item.job.workplaceType === workplaceFilter);
+
+    filtered.sort((a, b) => {
+      if (sortBy === 'score') {
+        return (b.atsScore ?? 0) - (a.atsScore ?? 0);
+      }
+      if (sortBy === 'interview') {
+        const aHas = a.nextInterviewDate ? 1 : 0;
+        const bHas = b.nextInterviewDate ? 1 : 0;
+        if (aHas !== bHas) return bHas - aHas;
+      }
+      return b.updatedAt - a.updatedAt;
+    });
+
+    return filtered;
+  }, [items, sortBy, workplaceFilter]);
+
+  const handleOpenFilter = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    setFilterVisible(true);
   };
 
-  const emptyCopy = getEmptyCopy(selectedStage);
-
-  const handleEmptyAction = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-    emptyCopy.onAction();
+  const handleResetFilters = () => {
+    setSortBy('updated');
+    setWorkplaceFilter('all');
   };
 
   return (
@@ -112,81 +106,153 @@ export default function JobsScreen() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}>
-        {/* Header Section (Structured identically to ExploreHeader) */}
-        <View style={styles.header}>
-          <View style={styles.badgeRow}>
-            <View style={styles.iconCircle}>
-              <Briefcase size={15} color="#121212" strokeWidth={2.2} />
+        <View style={styles.pageColumn}>
+          {/* Header Section */}
+          <View style={styles.header}>
+            <View style={styles.badgeRow}>
+              <View style={styles.iconCircle}>
+                <Briefcase size={15} color="#121212" strokeWidth={2.2} />
+              </View>
+              <Label style={styles.badgeText}>APPLICATION TRACKER</Label>
             </View>
-            <Label style={styles.badgeText}>APPLICATION TRACKER</Label>
+
+            <View style={styles.titleRow}>
+              <Display style={styles.heroText}>
+                TRACKED{'\n'}PIPELINE
+              </Display>
+
+              <Pressable
+                onPress={handleOpenFilter}
+                style={state => [
+                  styles.filterButton,
+                  activeFilterCount > 0 && styles.filterButtonActive,
+                  state.pressed && styles.pressedFade,
+                  Platform.OS === 'web' && (state as { focused?: boolean }).focused
+                    ? styles.webFocusRing
+                    : null,
+                  Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : null,
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel={
+                  activeFilterCount > 0
+                    ? `Sort and filter applications, ${activeFilterCount} active`
+                    : 'Sort and filter applications'
+                }>
+                <SlidersHorizontal size={16} color="#121212" strokeWidth={2.2} />
+                <Text style={styles.filterButtonText}>Filter</Text>
+                {activeFilterCount > 0 ? (
+                  <View style={styles.filterCountBadge}>
+                    <Text style={styles.filterCountText}>{activeFilterCount}</Text>
+                  </View>
+                ) : null}
+              </Pressable>
+            </View>
           </View>
 
-          <View style={styles.titleRow}>
-            <Display style={styles.heroText}>
-              TRACKED{'\n'}PIPELINE
-            </Display>
-
-            <View style={styles.totalBadge}>
-              <Label style={styles.totalBadgeText}>{allItems.length} TOTAL</Label>
-            </View>
-          </View>
-        </View>
-
-        {/* Stage Filter Pills (Structured identically to FilterPillBar) */}
-        <PipelineStageTabs
-          selectedStage={selectedStage}
-          onSelectStage={setSelectedStage}
-          counts={countsByStage}
-        />
-
-        {/* Subtitle Row (Structured identically to Explore's listHeader) */}
-        <View style={styles.listHeader}>
-          <Heading style={styles.listTitle}>
-            {selectedStage === 'all'
-              ? 'Featured Openings'
-              : `${STAGE_LABELS[selectedStage]} Stage`}
-          </Heading>
-          <Body style={styles.countText}>{items.length} Positions Available</Body>
-        </View>
-
-        {/* Bento/Pipeline Cards List */}
-        {items.map(item => (
-          <PipelineCard
-            key={item.id}
-            item={item}
-            onViewDetail={j => setDetailJob(j)}
-            onManageStage={i => setManagingItem(i)}
+          {/* Stage Filter Pills */}
+          <PipelineStageTabs
+            selectedStage={selectedStage}
+            onSelectStage={setSelectedStage}
+            counts={countsByStage}
           />
-        ))}
 
-        {/* Empty State (Structured identically to Explore's emptyContainer) */}
-        {items.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <Heading style={styles.emptyTitle}>{emptyCopy.title}</Heading>
-            <Body style={styles.emptySubtitle}>{emptyCopy.subtitle}</Body>
+          {/* List Header */}
+          <View style={styles.listHeader}>
+            <Heading style={styles.listTitle}>
+              {selectedStage === 'all'
+                ? STAGE_LABELS.all
+                : `${STAGE_LABELS[selectedStage]} Stage`}
+            </Heading>
 
-            <Pressable
-              onPress={handleEmptyAction}
-              style={({ pressed }) => [
-                styles.emptyActionButton,
-                pressed && styles.emptyActionButtonPressed,
-              ]}
-              accessibilityRole="button"
-              accessibilityLabel={emptyCopy.actionLabel}>
-              <Label style={styles.emptyActionText}>{emptyCopy.actionLabel}</Label>
-            </Pressable>
+            <View style={styles.listMetaRight}>
+              {activeFilterCount > 0 ? (
+                <Pressable
+                  onPress={handleResetFilters}
+                  style={state => [
+                    styles.resetChip,
+                    state.pressed && styles.pressedFade,
+                    Platform.OS === 'web' && (state as { focused?: boolean }).focused
+                      ? styles.webFocusRing
+                      : null,
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Reset active sort and workplace filter">
+                  <Text style={styles.resetChipText}>Reset filters</Text>
+                </Pressable>
+              ) : null}
+              <Body style={styles.countText}>
+                {visibleItems.length} {visibleItems.length === 1 ? 'Role' : 'Roles'}
+              </Body>
+            </View>
           </View>
-        ) : null}
+
+          {/* Data View States: Loading, Error, List, Empty */}
+          {isLoading && allItems.length === 0 ? (
+            <View style={styles.stateBox} accessibilityLiveRegion="polite">
+              <ActivityIndicator size="small" color="#121212" />
+              <Body style={styles.stateBody}>Loading your tracked pipeline...</Body>
+            </View>
+          ) : error && allItems.length === 0 ? (
+            <View style={styles.stateBox} accessibilityLiveRegion="polite">
+              <AlertCircle size={22} color="#991B1B" />
+              <Heading style={styles.stateTitle}>Unable to load tracker</Heading>
+              <Body style={styles.stateBody}>{error}</Body>
+              <Pressable
+                onPress={() => getAll()}
+                style={state => [
+                  styles.retryBtn,
+                  state.pressed && styles.pressedFade,
+                  Platform.OS === 'web' && (state as { focused?: boolean }).focused
+                    ? styles.webFocusRing
+                    : null,
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel="Retry loading applications">
+                <Label style={styles.retryBtnText}>RETRY</Label>
+              </Pressable>
+            </View>
+          ) : visibleItems.length > 0 ? (
+            visibleItems.map(item => (
+              <PipelineCard
+                key={item.id}
+                item={item}
+                onViewDetail={j => setDetailJob(j)}
+                onManageStage={i => setManagingItem(i)}
+              />
+            ))
+          ) : (
+            <PipelineEmptyState
+              selectedStage={selectedStage}
+              onSwitchStage={setSelectedStage}
+              counts={countsByStage}
+              hasSecondaryFilter={workplaceFilter !== 'all'}
+              onClearSecondaryFilters={handleResetFilters}
+            />
+          )}
+        </View>
       </ScrollView>
 
-      {/* Full Job Spec Detail Modal ("Detail Biasa") */}
+      {/* Full Job Spec Detail Modal */}
       <JobDetailModal
         job={detailJob}
         visible={Boolean(detailJob)}
         onClose={() => setDetailJob(null)}
       />
 
-      {/* Dedicated Progress Update Modal */}
+      {/* Sort & Workplace Filter Sheet */}
+      <PipelineFilterModal
+        visible={filterVisible}
+        sortBy={sortBy}
+        workplaceFilter={workplaceFilter}
+        onApply={(nextSort, nextWorkplace) => {
+          setSortBy(nextSort);
+          setWorkplaceFilter(nextWorkplace);
+        }}
+        onReset={handleResetFilters}
+        onClose={() => setFilterVisible(false)}
+      />
+
+      {/* Stage Progression Update Modal */}
       <PipelineStageModal
         item={managingItem}
         visible={Boolean(managingItem)}
@@ -205,7 +271,12 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.light.background,
   },
   scrollContent: {
-    paddingBottom: 110, // Generous clearance above floating dock
+    paddingBottom: 110,
+  },
+  pageColumn: {
+    width: '100%',
+    maxWidth: 680,
+    alignSelf: 'center',
   },
   header: {
     paddingHorizontal: 20,
@@ -238,6 +309,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-end',
     justifyContent: 'space-between',
+    gap: 12,
   },
   heroText: {
     fontSize: 28,
@@ -246,75 +318,124 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     letterSpacing: -0.8,
   },
-  totalBadge: {
-    backgroundColor: '#EFF3E8',
-    paddingHorizontal: 12,
-    paddingVertical: 7,
+  filterButton: {
+    minHeight: 44,
+    paddingHorizontal: 14,
     borderRadius: Radius.full,
-    borderWidth: 1,
-    borderColor: '#D8DEC9',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.5,
+    borderColor: Colors.light.border,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 7,
   },
-  totalBadgeText: {
-    fontSize: 11,
+  filterButtonActive: {
+    borderColor: '#121212',
+    backgroundColor: '#EFFCD3',
+  },
+  filterButtonText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#121212',
+  },
+  filterCountBadge: {
+    minWidth: 20,
+    height: 20,
+    borderRadius: 10,
+    paddingHorizontal: 5,
+    backgroundColor: '#121212',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  filterCountText: {
+    fontSize: 10.5,
     fontWeight: '800',
-    letterSpacing: 0.8,
-    color: '#2F4F00',
+    color: '#B8F23E',
   },
   listHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'baseline',
+    alignItems: 'center',
     paddingHorizontal: 20,
     marginTop: 20,
-    marginBottom: 8,
+    marginBottom: 10,
+    gap: 8,
   },
   listTitle: {
     fontSize: 16,
     color: '#121212',
     fontWeight: '700',
   },
+  listMetaRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  resetChip: {
+    minHeight: 44,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: Radius.full,
+    backgroundColor: '#EFF3E8',
+    borderWidth: 1,
+    borderColor: '#D8DEC9',
+    justifyContent: 'center',
+    ...(Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : null),
+  },
+  resetChipText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#121212',
+  },
   countText: {
     fontSize: 12,
     color: '#5A5D54',
-    fontWeight: '500',
+    fontWeight: '600',
   },
-  emptyContainer: {
-    paddingHorizontal: 20,
-    paddingVertical: 36,
+  stateBox: {
+    paddingHorizontal: 24,
+    paddingVertical: 48,
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 10,
   },
-  emptyTitle: {
+  stateTitle: {
     fontSize: 16,
-    color: '#121212',
     fontWeight: '700',
-    marginBottom: 8,
+    color: '#121212',
     textAlign: 'center',
   },
-  emptySubtitle: {
+  stateBody: {
     fontSize: 13,
     lineHeight: 19,
     color: '#5A5D54',
     textAlign: 'center',
-    maxWidth: 290,
-    marginBottom: 16,
+    maxWidth: 300,
   },
-  emptyActionButton: {
-    height: 38,
-    paddingHorizontal: 18,
+  retryBtn: {
+    minHeight: 44,
+    paddingHorizontal: 20,
     borderRadius: Radius.full,
     backgroundColor: '#121212',
     alignItems: 'center',
     justifyContent: 'center',
+    marginTop: 4,
+    ...(Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : null),
   },
-  emptyActionButtonPressed: {
-    opacity: 0.85,
-    transform: [{ scale: 0.98 }],
-  },
-  emptyActionText: {
-    fontSize: 11,
+  retryBtnText: {
+    fontSize: 11.5,
     fontWeight: '700',
     letterSpacing: 0.6,
     color: '#FFFFFF',
   },
+  pressedFade: {
+    opacity: 0.8,
+  },
+  webFocusRing: {
+    outlineWidth: 2,
+    outlineStyle: 'solid',
+    outlineColor: '#121212',
+    outlineOffset: 2,
+  } as any,
 });

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { Platform, View, Text, StyleSheet, Pressable } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { MapPin, Calendar, ArrowRight, FileText } from 'lucide-react-native';
 import Svg, { Circle } from 'react-native-svg';
@@ -17,19 +17,19 @@ interface CircularScoreRingProps {
 function getScoreColorMeta(score: number) {
   if (score >= 90) {
     return {
-      stroke: '#38A100', // vibrant bright lime-green
-      track: '#E2F7BE', // light lime track
-      fill: '#F4FDE8', // radiant soft lime glow inside
-      textColor: '#1E4600', // crisp high-contrast green
+      stroke: '#2E6F00',
+      track: '#E2F7BE',
+      fill: '#F4FDE8',
+      textColor: '#1E4600',
       statusText: 'Top Match',
       statusColor: '#257000',
     };
   }
   if (score >= 80) {
     return {
-      stroke: '#16A34A', // vibrant emerald green
-      track: '#DCFCE7', // mint track
-      fill: '#F0FDF4', // mint glow inside
+      stroke: '#2F4F00',
+      track: '#DCFCE7',
+      fill: '#F0FDF4',
       textColor: '#14532D',
       statusText: 'Strong Fit',
       statusColor: '#15803D',
@@ -37,16 +37,16 @@ function getScoreColorMeta(score: number) {
   }
   if (score >= 70) {
     return {
-      stroke: '#0284C7', // vivid sky blue
+      stroke: '#0C4A6E',
       track: '#E0F2FE',
       fill: '#F0F9FF',
-      textColor: '#0369A1',
+      textColor: '#0C4A6E',
       statusText: 'Good Match',
-      statusColor: '#0284C7',
+      statusColor: '#0C4A6E',
     };
   }
   return {
-    stroke: '#D97706', // warm amber
+    stroke: '#92400E',
     track: '#FEF3C7',
     fill: '#FFFBEB',
     textColor: '#92400E',
@@ -123,17 +123,19 @@ export function PipelineCard({
 
   const getStageMeta = (s: PipelineStage) => {
     switch (s) {
-      case 'interviewing':
-        return { label: 'INTERVIEW', bg: '#EFF3E8', border: '#D8DEC9', text: '#2F4F00' };
       case 'offered':
-        return { label: 'OFFER', bg: '#EFF3E8', border: '#B8F23E', text: '#121212' };
+        return { label: 'OFFER', bg: '#B8F23E', border: '#98DA18', text: '#121212' };
+      case 'interviewing':
+        return { label: 'INTERVIEW', bg: '#E7F6C4', border: '#C5E68B', text: '#1E4600' };
       case 'applied':
         return { label: 'APPLIED', bg: '#121212', border: '#121212', text: '#FFFFFF' };
       case 'shortlisted':
-        return { label: 'SHORTLIST', bg: '#FFFFFF', border: '#E8ECDF', text: '#5A5D54' };
+        return { label: 'SHORTLIST', bg: '#FFFFFF', border: '#D8DEC9', text: '#121212' };
+      case 'rejected':
+        return { label: 'CLOSED', bg: '#FEE2E2', border: '#FCA5A5', text: '#991B1B' };
       case 'scouted':
       default:
-        return { label: 'SCOUTED', bg: '#F4F6F0', border: '#E8ECDF', text: '#5A5D54' };
+        return { label: 'SCOUTED', bg: '#F4F6F0', border: '#E2E6DC', text: '#5A5D54' };
     }
   };
 
@@ -144,9 +146,13 @@ export function PipelineCard({
       {/* Clickable Header & Milestones to View Detail */}
       <Pressable
         onPress={handleCardPress}
-        style={({ pressed }) => [
+        style={state => [
           styles.cardBodyPressable,
-          pressed && styles.cardPressed,
+          state.pressed && styles.cardPressed,
+          Platform.OS === 'web' && (state as { focused?: boolean }).focused
+            ? styles.webFocusRing
+            : null,
+          Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : null,
         ]}
         accessibilityRole="button"
         accessibilityLabel={`View full details for ${job.title} at ${job.company}`}>
@@ -203,7 +209,7 @@ export function PipelineCard({
         {/* Latest Note Snippet (if available) */}
         {item.notes && item.notes.length > 0 ? (
           <View style={styles.noteSnippetRow}>
-            <FileText size={12} color="#8E9285" />
+            <FileText size={12} color="#5A5D54" />
             <Body style={styles.noteSnippetText} numberOfLines={1}>
               {item.notes[item.notes.length - 1]}
             </Body>
@@ -223,7 +229,7 @@ export function PipelineCard({
                   styles.scoreSublabelText,
                   { color: getScoreColorMeta(item.atsScore).statusColor },
                 ]}>
-                ● {getScoreColorMeta(item.atsScore).statusText}
+                {getScoreColorMeta(item.atsScore).statusText}
               </Text>
             </View>
           </View>
@@ -233,9 +239,13 @@ export function PipelineCard({
 
         <Pressable
           onPress={handleStageAction}
-          style={({ pressed }) => [
+          style={state => [
             styles.advanceButton,
-            pressed && styles.advanceButtonPressed,
+            state.pressed && styles.advanceButtonPressed,
+            Platform.OS === 'web' && (state as { focused?: boolean }).focused
+              ? styles.webFocusRing
+              : null,
+            Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : null,
           ]}
           accessibilityRole="button"
           accessibilityLabel={`Update progress for ${job.title}`}>
@@ -319,9 +329,9 @@ const styles = StyleSheet.create({
     marginTop: 3,
   },
   stageBadge: {
-    paddingHorizontal: 9,
-    paddingVertical: 4.5,
-    borderRadius: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: Radius.sm,
     borderWidth: 1,
     alignSelf: 'flex-start',
   },
@@ -337,9 +347,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#F8F9F5',
     paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: 8,
+    borderRadius: Radius.sm,
     borderWidth: 1,
-    borderColor: '#EAEFE2',
+    borderColor: '#E2E6DC',
   },
   milestoneText: {
     fontSize: 12,
@@ -358,8 +368,9 @@ const styles = StyleSheet.create({
   },
   noteSnippetText: {
     fontSize: 12,
-    color: '#8E9285',
+    color: '#5A5D54',
     fontStyle: 'italic',
+    flex: 1,
   },
   cardFooter: {
     flexDirection: 'row',
@@ -394,18 +405,18 @@ const styles = StyleSheet.create({
     letterSpacing: -0.4,
   },
   advanceButton: {
-    height: 36,
+    minHeight: 44,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: '#EFF3E8',
-    paddingHorizontal: 12,
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 14,
     borderRadius: Radius.pill,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: '#D8DEC9',
   },
   advanceButtonPressed: {
-    backgroundColor: '#E2E6D9',
+    backgroundColor: '#F4F6F0',
   },
   advanceButtonText: {
     fontSize: 11,
@@ -413,4 +424,10 @@ const styles = StyleSheet.create({
     letterSpacing: 0.6,
     color: '#121212',
   },
+  webFocusRing: {
+    outlineWidth: 2,
+    outlineStyle: 'solid',
+    outlineColor: '#121212',
+    outlineOffset: 2,
+  } as any,
 });

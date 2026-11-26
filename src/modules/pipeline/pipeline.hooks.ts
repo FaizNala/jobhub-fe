@@ -13,21 +13,31 @@ export function usePipeline(initialStage: PipelineStage | 'all' = 'all') {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  const getAll = useCallback(async (params?: GetPipelineQuery): Promise<PipelineItem[]> => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const res = await pipelineService.getAll(params);
-      setItems(res.data);
-      return res.data;
-    } catch (err: any) {
-      const msg = err.message || 'Failed to fetch pipeline from gateway';
-      setError(msg);
-      return [];
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  const getAll = useCallback(
+    async (
+      params?: GetPipelineQuery,
+      options?: { silent?: boolean },
+    ): Promise<PipelineItem[]> => {
+      if (!options?.silent) {
+        setIsLoading(true);
+      }
+      setError(null);
+      try {
+        const res = await pipelineService.getAll(params);
+        setItems(res.data);
+        return res.data;
+      } catch (err: any) {
+        const msg = err.message || 'Failed to fetch pipeline from gateway';
+        setError(msg);
+        return [];
+      } finally {
+        if (!options?.silent) {
+          setIsLoading(false);
+        }
+      }
+    },
+    [],
+  );
 
   const getById = useCallback(async (id: string): Promise<PipelineItem | null> => {
     setIsLoading(true);

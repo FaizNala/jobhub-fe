@@ -1,5 +1,5 @@
 import React from 'react';
-import { ScrollView, Pressable, View, Text, StyleSheet } from 'react-native';
+import { Platform, ScrollView, Pressable, View, Text, StyleSheet } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { Colors, Radius } from '@/constants/theme';
 import { PipelineStage } from '../pipeline.types';
@@ -50,7 +50,15 @@ export function PipelineStageTabs({
             accessibilityRole="button"
             accessibilityState={{ selected: isSelected }}
             accessibilityLabel={`${tab.label}, ${count} roles`}
-            style={[styles.pill, isSelected ? styles.pillSelected : styles.pillDefault]}>
+            style={state => [
+              styles.pill,
+              isSelected ? styles.pillSelected : styles.pillDefault,
+              state.pressed && styles.pillPressed,
+              Platform.OS === 'web' && (state as { focused?: boolean }).focused
+                ? styles.webFocusRing
+                : null,
+              Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : null,
+            ]}>
             <Text style={[styles.pillText, isSelected ? styles.textSelected : styles.textDefault]}>
               {tab.label}
             </Text>
@@ -73,6 +81,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   pill: {
+    minHeight: 44,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
@@ -86,8 +95,11 @@ const styles = StyleSheet.create({
     borderColor: Colors.light.border,
   },
   pillSelected: {
-    backgroundColor: Colors.light.primary, // Electric Lime matching FilterPillBar
+    backgroundColor: Colors.light.primary,
     borderColor: Colors.light.primary,
+  },
+  pillPressed: {
+    opacity: 0.85,
   },
   pillText: {
     fontSize: 13,
@@ -101,10 +113,10 @@ const styles = StyleSheet.create({
     color: '#121212',
   },
   badge: {
-    minWidth: 18,
-    height: 18,
-    borderRadius: 9,
-    paddingHorizontal: 4,
+    minWidth: 20,
+    height: 20,
+    borderRadius: 10,
+    paddingHorizontal: 5,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -115,8 +127,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#121212',
   },
   badgeText: {
-    fontSize: 10,
+    fontSize: 10.5,
     fontWeight: '700',
+    fontVariant: ['tabular-nums'],
   },
   badgeTextDefault: {
     color: '#5A5D54',
@@ -124,4 +137,10 @@ const styles = StyleSheet.create({
   badgeTextSelected: {
     color: Colors.light.primary,
   },
+  webFocusRing: {
+    outlineWidth: 2,
+    outlineStyle: 'solid',
+    outlineColor: '#121212',
+    outlineOffset: 2,
+  } as any,
 });

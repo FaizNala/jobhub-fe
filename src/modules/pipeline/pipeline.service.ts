@@ -36,7 +36,7 @@ let MOCK_PIPELINE_ITEMS: PipelineItem[] = [
     job: MOCK_JOBS[2], // Spotify Product Designer
     stage: 'scouted',
     appliedDate: undefined,
-    notes: ['Scouted via AI Hunter from Greenhouse board'],
+    notes: ['Scouted by AI Hunter based on profile match'],
     atsScore: 81,
     updatedAt: Date.now() - 3600000,
   },
@@ -109,19 +109,27 @@ export const pipelineService = {
   updateStage: async (id: string, stage: PipelineStage): Promise<ApiResponse<PipelineItem>> => {
     if (apiClient.getMockMode()) {
       await new Promise(r => setTimeout(r, 50));
-      const item = MOCK_PIPELINE_ITEMS.find(i => i.id === id);
-      if (!item) throw { status: 404, message: `Pipeline item '${id}' not found` };
+      const idx = MOCK_PIPELINE_ITEMS.findIndex(i => i.id === id);
+      if (idx === -1) throw { status: 404, message: `Pipeline item '${id}' not found` };
 
-      item.stage = stage;
-      item.updatedAt = Date.now();
-      if (stage === 'applied' && !item.appliedDate) {
-        item.appliedDate = new Date().toLocaleDateString('en-US', {
-          month: 'short',
-          day: 'numeric',
-          year: 'numeric',
-        });
-      }
-      return { success: true, status: 200, data: item };
+      const current = MOCK_PIPELINE_ITEMS[idx];
+      const nextAppliedDate =
+        stage === 'applied' && !current.appliedDate
+          ? new Date().toLocaleDateString('en-US', {
+              month: 'short',
+              day: 'numeric',
+              year: 'numeric',
+            })
+          : current.appliedDate;
+
+      const updated: PipelineItem = {
+        ...current,
+        stage,
+        appliedDate: nextAppliedDate,
+        updatedAt: Date.now(),
+      };
+      MOCK_PIPELINE_ITEMS[idx] = updated;
+      return { success: true, status: 200, data: updated };
     }
 
     return apiClient.put<PipelineItem, UpdatePipelineStageDto>(`/api/v1/pipeline/${id}/stage`, { stage });
@@ -133,12 +141,17 @@ export const pipelineService = {
   addNote: async (id: string, note: string): Promise<ApiResponse<PipelineItem>> => {
     if (apiClient.getMockMode()) {
       await new Promise(r => setTimeout(r, 30));
-      const item = MOCK_PIPELINE_ITEMS.find(i => i.id === id);
-      if (!item) throw { status: 404, message: `Pipeline item '${id}' not found` };
+      const idx = MOCK_PIPELINE_ITEMS.findIndex(i => i.id === id);
+      if (idx === -1) throw { status: 404, message: `Pipeline item '${id}' not found` };
 
-      item.notes.push(note);
-      item.updatedAt = Date.now();
-      return { success: true, status: 200, data: item };
+      const current = MOCK_PIPELINE_ITEMS[idx];
+      const updated: PipelineItem = {
+        ...current,
+        notes: [...current.notes, note],
+        updatedAt: Date.now(),
+      };
+      MOCK_PIPELINE_ITEMS[idx] = updated;
+      return { success: true, status: 200, data: updated };
     }
 
     return apiClient.post<PipelineItem, AddPipelineNoteDto>(`/api/v1/pipeline/${id}/notes`, { note });

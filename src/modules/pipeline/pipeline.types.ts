@@ -71,6 +71,9 @@ export const PIPELINE_STAGES: PipelineStageConfig[] = [
   },
 ];
 
+export type PipelineSortOption = 'updated' | 'score' | 'interview';
+export type PipelineWorkplaceFilter = 'all' | 'Remote' | 'Hybrid' | 'On-Site';
+
 // Pipeline Gateway DTOs
 export interface GetPipelineQuery {
   stage?: PipelineStage | 'all';

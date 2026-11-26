@@ -164,9 +164,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 5,
     backgroundColor: '#B8F23E',
-    paddingHorizontal: 8,
-    paddingVertical: 3.5,
-    borderRadius: Radius.pill,
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: Radius.sm,
   },
   badgeText: {
     fontSize: 9.5,
@@ -176,9 +176,11 @@ const styles = StyleSheet.create({
   },
   countBadge: {
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    paddingHorizontal: 8,
-    paddingVertical: 3.5,
-    borderRadius: Radius.pill,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.16)',
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: Radius.sm,
   },
   countBadgeText: {
     fontSize: 9.5,
@@ -252,7 +254,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(184, 242, 62, 0.3)',
     paddingHorizontal: 10,
     paddingVertical: 4.5,
-    borderRadius: Radius.pill,
+    borderRadius: Radius.sm,
   },
   salaryText: {
     fontSize: 12,
@@ -261,9 +263,11 @@ const styles = StyleSheet.create({
   },
   tagPill: {
     backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.14)',
     paddingHorizontal: 9,
     paddingVertical: 4.5,
-    borderRadius: Radius.pill,
+    borderRadius: Radius.sm,
   },
   tagText: {
     fontSize: 11,

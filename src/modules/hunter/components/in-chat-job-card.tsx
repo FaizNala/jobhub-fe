@@ -186,11 +186,11 @@ const styles = StyleSheet.create({
   },
   salaryBadge: {
     backgroundColor: '#EFF3E8',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
+    paddingHorizontal: 9,
+    paddingVertical: 4.5,
+    borderRadius: Radius.sm,
     borderWidth: 1,
-    borderColor: '#D8DEC9',
+    borderColor: '#E2E6DC',
   },
   salaryText: {
     fontSize: 11,

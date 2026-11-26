@@ -19,9 +19,9 @@ interface PipelineStageModalProps {
   item: PipelineItem | null;
   visible: boolean;
   onClose: () => void;
-  onUpdateStage: (id: string, stage: PipelineStage) => void;
-  onAddNote: (id: string, note: string) => void;
-  onRemove?: (id: string) => void;
+  onUpdateStage: (id: string, stage: PipelineStage) => Promise<unknown> | void;
+  onAddNote: (id: string, note: string) => Promise<unknown> | void;
+  onRemove?: (id: string) => Promise<unknown> | void;
 }
 
 const STAGES: { id: PipelineStage; label: string; desc: string }[] = [
@@ -50,17 +50,32 @@ export function PipelineStageModal({
     }
   }, [item]);
 
+  useEffect(() => {
+    if (Platform.OS !== 'web' || !visible) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown, true);
+    return () => window.removeEventListener('keydown', onKeyDown, true);
+  }, [onClose, visible]);
+
   if (!item) return null;
 
-  const handleSave = () => {
+  const handleSave = async () => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-    if (selectedStage !== item.stage) {
-      onUpdateStage(item.id, selectedStage);
+    try {
+      if (selectedStage !== item.stage) {
+        await onUpdateStage(item.id, selectedStage);
+      }
+      if (noteText.trim()) {
+        await onAddNote(item.id, noteText.trim());
+      }
+    } finally {
+      onClose();
     }
-    if (noteText.trim()) {
-      onAddNote(item.id, noteText.trim());
-    }
-    onClose();
   };
 
   const handleRemove = () => {
@@ -97,8 +112,13 @@ export function PipelineStageModal({
 
               <Pressable
                 onPress={onClose}
-                hitSlop={8}
-                style={styles.closeButton}
+                style={state => [
+                  styles.closeButton,
+                  state.pressed && styles.stagePillPressed,
+                  Platform.OS === 'web' && (state as { focused?: boolean }).focused
+                    ? styles.webFocusRing
+                    : null,
+                ]}
                 accessibilityRole="button"
                 accessibilityLabel="Close stage update modal">
                 <X size={18} color="#121212" />
@@ -119,10 +139,14 @@ export function PipelineStageModal({
                         Haptics.selectionAsync().catch(() => {});
                         setSelectedStage(s.id);
                       }}
-                      style={({ pressed }) => [
+                      style={state => [
                         styles.stagePill,
                         isSelected ? styles.stagePillActive : styles.stagePillInactive,
-                        pressed && styles.stagePillPressed,
+                        state.pressed && styles.stagePillPressed,
+                        Platform.OS === 'web' && (state as { focused?: boolean }).focused
+                          ? styles.webFocusRing
+                          : null,
+                        Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : null,
                       ]}
                       accessibilityRole="button"
                       accessibilityLabel={`Select stage ${s.label}`}>
@@ -151,7 +175,7 @@ export function PipelineStageModal({
                 value={noteText}
                 onChangeText={setNoteText}
                 placeholder="e.g. Recruiter phone screen scheduled for Nov 28..."
-                placeholderTextColor="#8E9285"
+                placeholderTextColor="#5A5D54"
                 style={styles.noteInput}
                 accessibilityLabel="Application note input"
               />
@@ -161,9 +185,13 @@ export function PipelineStageModal({
             <View style={styles.actionColumn}>
               <Pressable
                 onPress={handleSave}
-                style={({ pressed }) => [
+                style={state => [
                   styles.saveButton,
-                  pressed && styles.saveButtonPressed,
+                  state.pressed && styles.saveButtonPressed,
+                  Platform.OS === 'web' && (state as { focused?: boolean }).focused
+                    ? styles.webFocusRing
+                    : null,
+                  Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : null,
                 ]}
                 accessibilityRole="button"
                 accessibilityLabel="Save stage update">
@@ -173,13 +201,17 @@ export function PipelineStageModal({
               {onRemove ? (
                 <Pressable
                   onPress={handleRemove}
-                  style={({ pressed }) => [
+                  style={state => [
                     styles.removeButton,
-                    pressed && styles.removeButtonPressed,
+                    state.pressed && styles.removeButtonPressed,
+                    Platform.OS === 'web' && (state as { focused?: boolean }).focused
+                      ? styles.webFocusRing
+                      : null,
+                    Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : null,
                   ]}
                   accessibilityRole="button"
                   accessibilityLabel="Remove role from application tracker">
-                  <Trash2 size={13} color="#8E9285" />
+                  <Trash2 size={14} color="#991B1B" />
                   <Label style={styles.removeButtonText}>REMOVE FROM TRACKER</Label>
                 </Pressable>
               ) : null}
@@ -202,6 +234,8 @@ const styles = StyleSheet.create({
   },
   sheetContainer: {
     width: '100%',
+    maxWidth: 480,
+    alignSelf: 'center',
   },
   sheetContent: {
     backgroundColor: '#FFFFFF',
@@ -242,14 +276,15 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   closeButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: '#F4F6F0',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
     borderColor: '#E8ECDF',
+    ...(Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : null),
   },
   stagesSection: {
     gap: 8,
@@ -266,7 +301,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   stagePill: {
-    minHeight: 40,
+    minHeight: 44,
     paddingHorizontal: 14,
     borderRadius: Radius.pill,
     borderWidth: 1.5,
@@ -332,7 +367,7 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
   removeButton: {
-    minHeight: 38,
+    minHeight: 44,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -341,12 +376,18 @@ const styles = StyleSheet.create({
     borderRadius: Radius.pill,
   },
   removeButtonPressed: {
-    backgroundColor: '#FDEEE9',
+    backgroundColor: '#FEE2E2',
   },
   removeButtonText: {
     fontSize: 11,
     fontWeight: '700',
     letterSpacing: 0.6,
-    color: '#8E9285',
+    color: '#991B1B',
   },
+  webFocusRing: {
+    outlineWidth: 2,
+    outlineStyle: 'solid',
+    outlineColor: '#121212',
+    outlineOffset: 2,
+  } as any,
 });

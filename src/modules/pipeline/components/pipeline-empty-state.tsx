@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, Pressable } from 'react-native';
+import { Platform, View, StyleSheet, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import {
@@ -9,6 +9,7 @@ import {
   Calendar,
   Award,
   Compass,
+  SlidersHorizontal,
 } from 'lucide-react-native';
 import { PipelineStage } from '../pipeline.types';
 import { Heading, Body, Label } from '@/components/atoms/typography';
@@ -18,12 +19,16 @@ interface PipelineEmptyStateProps {
   selectedStage: PipelineStage | 'all';
   onSwitchStage: (stage: PipelineStage | 'all') => void;
   counts: Record<string, number>;
+  hasSecondaryFilter?: boolean;
+  onClearSecondaryFilters?: () => void;
 }
 
 export function PipelineEmptyState({
   selectedStage,
   onSwitchStage,
   counts,
+  hasSecondaryFilter = false,
+  onClearSecondaryFilters,
 }: PipelineEmptyStateProps) {
   const router = useRouter();
 
@@ -35,21 +40,30 @@ export function PipelineEmptyState({
   const totalCount = counts.all ?? 0;
   const shortlistCount = counts.shortlisted ?? 0;
 
-  // Single clean, uncluttered empty state per stage
   const getContent = () => {
+    if (hasSecondaryFilter && onClearSecondaryFilters) {
+      return {
+        icon: <SlidersHorizontal size={20} color="#5A5D54" />,
+        title: 'No matching applications',
+        subtitle: 'No tracked roles match the active workplace filter in this view.',
+        buttonLabel: 'CLEAR FILTERS',
+        action: onClearSecondaryFilters,
+      };
+    }
+
     switch (selectedStage) {
       case 'shortlisted':
         return {
-          icon: <Bookmark size={22} color="#8E9285" />,
+          icon: <Bookmark size={22} color="#5A5D54" />,
           title: 'Shortlist is empty',
-          subtitle: 'Save vacancies from Explore to prepare and tailor your applications.',
+          subtitle: 'Save roles from Explore or Daily Match Deck to prepare your applications.',
           buttonLabel: 'BROWSE VACANCIES',
           action: () => router.push('/'),
         };
 
       case 'applied':
         return {
-          icon: <Send size={20} color="#8E9285" />,
+          icon: <Send size={20} color="#5A5D54" />,
           title: 'No applications sent',
           subtitle:
             shortlistCount > 0
@@ -64,27 +78,27 @@ export function PipelineEmptyState({
 
       case 'interviewing':
         return {
-          icon: <Calendar size={20} color="#8E9285" />,
+          icon: <Calendar size={20} color="#5A5D54" />,
           title: 'No active interview loops',
-          subtitle: 'Applications with scheduled screening or technical loops appear here.',
-          buttonLabel: totalCount > 0 ? 'VIEW ALL APPLICATIONS' : 'EXPLORE ROLES',
+          subtitle: 'Applications with scheduled screening or team interviews appear here.',
+          buttonLabel: totalCount > 0 ? 'VIEW ALL TRACKED' : 'EXPLORE ROLES',
           action: () => (totalCount > 0 ? onSwitchStage('all') : router.push('/')),
         };
 
       case 'offered':
         return {
-          icon: <Award size={22} color="#8E9285" />,
+          icon: <Award size={22} color="#5A5D54" />,
           title: 'No formal offers yet',
-          subtitle: 'Progress through your interview loops to log compensation packages.',
-          buttonLabel: totalCount > 0 ? 'VIEW ALL ROLES' : 'EXPLORE ROLES',
+          subtitle: 'Progress through your interview rounds to record compensation offers.',
+          buttonLabel: totalCount > 0 ? 'VIEW ALL TRACKED' : 'EXPLORE ROLES',
           action: () => (totalCount > 0 ? onSwitchStage('all') : router.push('/')),
         };
 
       case 'scouted':
         return {
-          icon: <Compass size={22} color="#8E9285" />,
-          title: 'No scouted vacancies',
-          subtitle: 'Prompt your Hunter Agent to scout Greenhouse and Lever boards for you.',
+          icon: <Compass size={22} color="#5A5D54" />,
+          title: 'No scouted roles',
+          subtitle: 'Use AI Hunter to discover curated opportunities tailored to your preferences.',
           buttonLabel: 'LAUNCH HUNTER AGENT',
           action: () => router.push('/agent'),
         };
@@ -92,9 +106,9 @@ export function PipelineEmptyState({
       case 'all':
       default:
         return {
-          icon: <Inbox size={22} color="#8E9285" />,
-          title: 'Your pipeline is empty',
-          subtitle: 'Discover vacancies in Explore or let Hunter Agent scout matching roles.',
+          icon: <Inbox size={22} color="#5A5D54" />,
+          title: 'Your tracker is empty',
+          subtitle: 'Save roles in Explore or use AI Hunter to start building your pipeline.',
           buttonLabel: 'EXPLORE VACANCIES',
           action: () => router.push('/'),
         };
@@ -112,12 +126,15 @@ export function PipelineEmptyState({
         <Body style={styles.subtitle}>{content.subtitle}</Body>
       </View>
 
-      {/* Exactly ONE clean, quiet button */}
       <Pressable
         onPress={() => handleAction(content.action)}
-        style={({ pressed }) => [
+        style={state => [
           styles.actionButton,
-          pressed && styles.actionButtonPressed,
+          state.pressed && styles.actionButtonPressed,
+          Platform.OS === 'web' && (state as { focused?: boolean }).focused
+            ? styles.webFocusRing
+            : null,
+          Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : null,
         ]}
         accessibilityRole="button"
         accessibilityLabel={content.buttonLabel}>
@@ -129,42 +146,42 @@ export function PipelineEmptyState({
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 32,
-    paddingVertical: 56,
+    paddingHorizontal: 28,
+    paddingVertical: 44,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 14,
   },
   iconWrapper: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#F4F6F0',
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#E8ECDF',
+    borderColor: '#E2E6DC',
   },
   textContainer: {
     alignItems: 'center',
-    gap: 4,
-    maxWidth: 270,
+    gap: 6,
+    maxWidth: 300,
   },
   title: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
     color: '#121212',
     textAlign: 'center',
   },
   subtitle: {
-    fontSize: 12,
-    lineHeight: 18,
-    color: '#71756B',
+    fontSize: 13,
+    lineHeight: 19,
+    color: '#5A5D54',
     textAlign: 'center',
   },
   actionButton: {
-    height: 38,
-    paddingHorizontal: 18,
+    minHeight: 44,
+    paddingHorizontal: 20,
     borderRadius: Radius.pill,
     backgroundColor: '#121212',
     alignItems: 'center',
@@ -176,9 +193,15 @@ const styles = StyleSheet.create({
     transform: [{ scale: 0.98 }],
   },
   actionButtonText: {
-    fontSize: 11,
+    fontSize: 11.5,
     fontWeight: '700',
     letterSpacing: 0.6,
     color: '#FFFFFF',
   },
+  webFocusRing: {
+    outlineWidth: 2,
+    outlineStyle: 'solid',
+    outlineColor: '#121212',
+    outlineOffset: 2,
+  } as any,
 });

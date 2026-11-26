@@ -270,8 +270,8 @@ const styles = StyleSheet.create({
   salaryPill: {
     backgroundColor: '#F7FEE7',
     paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: Radius.pill,
+    paddingVertical: 4.5,
+    borderRadius: Radius.sm,
     borderWidth: 1,
     borderColor: '#D9F99D',
   },
@@ -283,8 +283,8 @@ const styles = StyleSheet.create({
   typePill: {
     backgroundColor: '#F4F6F0',
     paddingHorizontal: 9,
-    paddingVertical: 4,
-    borderRadius: Radius.pill,
+    paddingVertical: 4.5,
+    borderRadius: Radius.sm,
     borderWidth: 1,
     borderColor: '#E2E6DC',
   },
@@ -296,10 +296,10 @@ const styles = StyleSheet.create({
   tagChip: {
     backgroundColor: '#F9FAFB',
     borderWidth: 1,
-    borderColor: '#E5E7EB',
-    paddingHorizontal: 8,
-    paddingVertical: 3.5,
-    borderRadius: 6,
+    borderColor: '#E2E6DC',
+    paddingHorizontal: 9,
+    paddingVertical: 4.5,
+    borderRadius: Radius.sm,
   },
   tagText: {
     fontSize: 11,
