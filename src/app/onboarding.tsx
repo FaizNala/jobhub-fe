@@ -157,8 +157,8 @@ export default function OnboardingScreen() {
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}>
             {/* Vector Illustration */}
-            <View style={styles.illustrationFrame}>
-              <View style={styles.illustrationWrap}>{currentSlide.illustration}</View>
+            <View style={[styles.illustrationWrap, { minHeight: illustHeight }]}>
+              {currentSlide.illustration}
             </View>
 
             {/* Slide Text Group */}
@@ -334,22 +334,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 12,
   },
-  illustrationFrame: {
-    backgroundColor: Colors.light.background,
-    borderWidth: 1,
-    borderColor: Colors.light.border,
-    borderRadius: Radius.lg,
-    padding: 14,
-    marginBottom: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   illustrationWrap: {
-    backgroundColor: Colors.light.card,
-    borderRadius: Radius.md,
-    overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
+    marginBottom: 24,
   },
   textGroup: {
     alignItems: 'center',
