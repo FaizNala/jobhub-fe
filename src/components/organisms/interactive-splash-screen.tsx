@@ -6,6 +6,7 @@ import {
   Pressable,
   Platform,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -16,7 +17,8 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
-import { Colors } from '@/constants/theme';
+import { Colors, Radius } from '@/constants/theme';
+import { resolveSplashDurationMs } from '@/modules/onboarding';
 
 interface Props {
   onFinish?: () => void;
@@ -25,32 +27,35 @@ interface Props {
 }
 
 /**
- * InteractiveSplashScreen (Option B: Minimalist Modern)
- * 
- * - Background: Pure White (#FFFFFF)
- * - Wordmark: Deep Obsidian Black (#121212) grotesk lettering ("jobhub")
- * - Accent: Vibrant Electric Lime (#B8F23E) punctuation dot
- * - Anti-Slop: Zero clutter, zero extra text, ultra-fast 650ms delight budget
- * - Responsive & Interactive: UI-thread Reanimated 60fps + Haptic Tap-to-skip
- * - Zero-Flicker Gatekeeper: Holds viewport until store hydration and route gate are resolved
+ * InteractiveSplashScreen (Opsi A: Seamless Warm Linen)
+ *
+ * - Background: Warm Linen (#F4F6F0 / Colors.light.background) matching app canvas with zero tone jump
+ * - Wordmark: Deep Obsidian Black (#121212) lettering ("jobhub") + Electric Lime (#B8F23E) dot
+ * - Idempotent Exit: Prevents double fade triggers when tap-to-skip races hydration timer
  */
 export function InteractiveSplashScreen({
   onFinish,
-  minDurationMs = 650,
+  minDurationMs,
   isReady = true,
 }: Props) {
-  const prefersReducedMotion = useReducedMotion();
+  const insets = useSafeAreaInsets();
+  const prefersReducedMotion = Boolean(useReducedMotion());
   const hasFinishedRef = useRef(false);
+  const isExitingRef = useRef(false);
   const [minTimeElapsed, setMinTimeElapsed] = useState(false);
 
-  // Allow QA / Visual testing to inspect splash screen state
   const isHeld =
     typeof window !== 'undefined' &&
     (Boolean((window as any).__HOLD_SPLASH__) ||
       window.location?.search?.includes('splash=1'));
-  const effectiveDuration = isHeld ? 999999 : minDurationMs;
 
-  // Animated values
+  const effectiveDuration = resolveSplashDurationMs({
+    minDurationMs,
+    isWeb: Platform.OS === 'web',
+    prefersReducedMotion,
+    isHeld,
+  });
+
   const containerOpacity = useSharedValue(1);
   const logoScale = useSharedValue(prefersReducedMotion ? 1 : 0.94);
   const logoOpacity = useSharedValue(prefersReducedMotion ? 1 : 0);
@@ -59,20 +64,22 @@ export function InteractiveSplashScreen({
   const handleComplete = useCallback(() => {
     if (hasFinishedRef.current) return;
     hasFinishedRef.current = true;
-    if (onFinish) {
-      onFinish();
-    }
+    onFinish?.();
   }, [onFinish]);
 
   const triggerExit = useCallback(() => {
+    if (isExitingRef.current || hasFinishedRef.current) return;
+    isExitingRef.current = true;
+
     if (prefersReducedMotion) {
       handleComplete();
       return;
     }
+
     containerOpacity.value = withTiming(
       0,
       {
-        duration: 220,
+        duration: 200,
         easing: Easing.bezier(0.25, 0.1, 0.25, 1),
       },
       (finished) => {
@@ -83,10 +90,10 @@ export function InteractiveSplashScreen({
     );
   }, [containerOpacity, handleComplete, prefersReducedMotion]);
 
-  const handleTapToSkip = () => {
+  const handleTapToSkip = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     triggerExit();
-  };
+  }, [triggerExit]);
 
   useEffect(() => {
     if (prefersReducedMotion) {
@@ -96,21 +103,18 @@ export function InteractiveSplashScreen({
       return;
     }
 
-    // 1. Entrance animation (immediate spring pop)
-    logoOpacity.value = withTiming(1, { duration: 200, easing: Easing.out(Easing.quad) });
+    logoOpacity.value = withTiming(1, { duration: 180, easing: Easing.out(Easing.quad) });
     logoScale.value = withSpring(1, { damping: 16, stiffness: 160 });
 
-    // 2. Micro delayed spring for electric lime dot
     const dotTimer = setTimeout(() => {
       dotScale.value = withSpring(1, { damping: 12, stiffness: 200 });
-    }, 120);
+    }, 100);
 
     return () => {
       clearTimeout(dotTimer);
     };
   }, [dotScale, logoOpacity, logoScale, prefersReducedMotion]);
 
-  // 3. Minimum duration timer
   useEffect(() => {
     const exitTimer = setTimeout(() => {
       setMinTimeElapsed(true);
@@ -121,12 +125,23 @@ export function InteractiveSplashScreen({
     };
   }, [effectiveDuration]);
 
-  // 4. Smoothly exit only when BOTH minimum duration has elapsed AND app is hydrated & ready
   useEffect(() => {
     if (minTimeElapsed && isReady) {
       triggerExit();
     }
   }, [minTimeElapsed, isReady, triggerExit]);
+
+  useEffect(() => {
+    if (Platform.OS !== 'web') return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Enter' || event.key === ' ' || event.key === 'Escape') {
+        event.preventDefault();
+        handleTapToSkip();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown, true);
+    return () => window.removeEventListener('keydown', onKeyDown, true);
+  }, [handleTapToSkip]);
 
   const containerAnimatedStyle = useAnimatedStyle(() => ({
     opacity: containerOpacity.value,
@@ -141,28 +156,41 @@ export function InteractiveSplashScreen({
     transform: [{ scale: dotScale.value }],
   }));
 
+  const footerBottom = Math.max(insets.bottom + 20, 32);
+  const skipHintLabel =
+    Platform.OS === 'web'
+      ? 'Click or press Enter to continue'
+      : 'Tap anywhere to continue';
+
   return (
     <Animated.View style={[styles.overlay, containerAnimatedStyle]}>
       <Pressable
-        style={({ focused }: any) => [
-          styles.pressableArea,
-          Platform.OS === 'web' && focused && styles.webFocusRing,
-        ]}
+        style={styles.pressableArea}
         onPress={handleTapToSkip}
         accessibilityRole="button"
-        accessibilityLabel="JobHub Splash Screen. Tap anywhere to skip."
-        accessibilityHint="Dismisses splash screen and continues to app.">
-        <View style={styles.content}>
-          <Animated.View style={[styles.logoRow, logoAnimatedStyle]}>
-            <Text style={styles.logoText}>jobhub</Text>
-            <Animated.View style={[styles.dot, dotAnimatedStyle]} />
-          </Animated.View>
-        </View>
+        accessibilityLabel="JobHub Splash Screen. Activate to continue to app."
+        accessibilityHint="Dismisses splash screen immediately.">
+        {({ pressed, focused }: any) => (
+          <>
+            <View style={styles.content}>
+              <Animated.View style={[styles.logoRow, logoAnimatedStyle]}>
+                <Text style={styles.logoText}>jobhub</Text>
+                <Animated.View style={[styles.dot, dotAnimatedStyle]} />
+              </Animated.View>
+            </View>
 
-        {/* Micro subtle cue on web/mobile - ultra minimal */}
-        <View style={styles.footer}>
-          <Text style={styles.hintText}>Tap to skip</Text>
-        </View>
+            <View style={[styles.footer, { bottom: footerBottom }]}>
+              <View
+                style={[
+                  styles.hintPill,
+                  pressed && styles.hintPressed,
+                  Platform.OS === 'web' && focused && styles.webFocusRing,
+                ]}>
+                <Text style={styles.hintText}>{skipHintLabel}</Text>
+              </View>
+            </View>
+          </>
+        )}
       </Pressable>
     </Animated.View>
   );
@@ -175,7 +203,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.light.background,
     zIndex: 99999,
     elevation: 99999,
     justifyContent: 'center',
@@ -186,7 +214,10 @@ const styles = StyleSheet.create({
     width: '100%',
     justifyContent: 'center',
     alignItems: 'center',
-    ...Platform.select({ web: { cursor: 'pointer' } as any, default: {} }),
+    ...Platform.select({
+      web: { cursor: 'pointer', outlineStyle: 'none' } as any,
+      default: {},
+    }),
   },
   content: {
     flex: 1,
@@ -215,27 +246,36 @@ const styles = StyleSheet.create({
     width: 11,
     height: 11,
     borderRadius: 5.5,
-    backgroundColor: '#B8F23E', // Signature Electric Lime
+    backgroundColor: '#B8F23E',
     marginLeft: 3,
     marginBottom: 8,
   },
   footer: {
     position: 'absolute',
-    bottom: 40,
     alignItems: 'center',
+  },
+  hintPill: {
+    minHeight: 44,
+    paddingHorizontal: 16,
+    borderRadius: Radius.full,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  hintPressed: {
+    opacity: 0.65,
   },
   hintText: {
     fontSize: 12,
     fontWeight: '600',
     color: Colors.light.textMuted,
-    letterSpacing: 0.3,
+    letterSpacing: 0.25,
   },
   webFocusRing: Platform.select({
     web: {
       outlineWidth: 2,
       outlineColor: '#121212',
       outlineStyle: 'solid',
-      outlineOffset: -4,
+      outlineOffset: 2,
     } as any,
     default: {},
   }),

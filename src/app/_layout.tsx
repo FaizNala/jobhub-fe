@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react';
-import { DarkTheme, DefaultTheme, ThemeProvider, usePathname, Stack } from 'expo-router';
+import { DefaultTheme, ThemeProvider, usePathname, Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { View, StyleSheet, useColorScheme } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { FloatingDock } from '@/components/organisms/floating-dock';
 import { Colors } from '@/constants/theme';
 import { NetworkListener } from '@/modules/network';
 import { NetworkErrorModal, OfflineAmbientBanner } from '@/components/organisms/network-error-modal';
 import { InteractiveSplashScreen } from '@/components/organisms/interactive-splash-screen';
-import { useOnboardingStore } from '@/modules/onboarding';
+import { HYDRATION_FAILSAFE_MS, useOnboardingStore } from '@/modules/onboarding';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -21,7 +21,6 @@ const DOCK_EXCLUDED_ROUTES = [
 ] as const;
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
   const pathname = usePathname();
 
   const isHydrated = useOnboardingStore((state) => state.isHydrated);
@@ -38,22 +37,35 @@ export default function RootLayout() {
     SplashScreen.hideAsync().catch(() => {});
   }, []);
 
-  // 2. Track Zustand store hydration state
+  // 2. Track Zustand store hydration state with a failsafe timeout so UI never deadlocks
   useEffect(() => {
-    if (useOnboardingStore.persist.hasHydrated()) {
+    let settled = useOnboardingStore.persist.hasHydrated();
+    if (settled) {
       setHydrated(true);
+      return;
     }
+
+    const failsafeTimer = setTimeout(() => {
+      if (!settled) {
+        settled = true;
+        setHydrated(true);
+      }
+    }, HYDRATION_FAILSAFE_MS);
+
     const unsub = useOnboardingStore.persist.onFinishHydration(() => {
+      settled = true;
+      clearTimeout(failsafeTimer);
       setHydrated(true);
     });
     return () => {
+      clearTimeout(failsafeTimer);
       unsub();
     };
   }, [setHydrated]);
 
   return (
     <GestureHandlerRootView style={styles.gestureRoot}>
-      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+      <ThemeProvider value={DefaultTheme}>
         <View style={styles.rootContainer}>
           <NetworkListener />
           <OfflineAmbientBanner />
