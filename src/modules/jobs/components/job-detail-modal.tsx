@@ -1,17 +1,18 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   Modal,
-  View,
+  Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
-  Pressable,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, Bookmark, MapPin } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { Colors, Radius } from '@/constants/theme';
 import { Job } from '../jobs.types';
-import { Display, Heading, Body, Label } from '@/components/atoms/typography';
+import { Body, Display, Heading, Label } from '@/components/atoms/typography';
 import { BadgeChip } from '@/components/atoms/badge-chip';
 import { PillButton } from '@/components/atoms/pill-button';
 import { StageStepCard } from './stage-step-card';
@@ -30,6 +31,18 @@ export function JobDetailModal({
   onClose,
 }: JobDetailModalProps) {
   const { allItems, create, remove, updateStage } = usePipeline();
+
+  useEffect(() => {
+    if (Platform.OS !== 'web' || !visible) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown, true);
+    return () => window.removeEventListener('keydown', handleKeyDown, true);
+  }, [onClose, visible]);
 
   if (!job) return null;
 
@@ -61,80 +74,95 @@ export function JobDetailModal({
       presentationStyle="pageSheet"
       onRequestClose={onClose}>
       <SafeAreaView style={styles.modalContainer}>
-        {/* Navigation Bar */}
-        <View style={styles.navBar}>
-          <Pressable
-            onPress={onClose}
-            hitSlop={8}
-            accessibilityRole="button"
-            accessibilityLabel="Back to previous screen"
-            style={styles.navButton}>
-            <ArrowLeft size={20} color="#121212" />
-            <Label style={styles.navText}>Back</Label>
-          </Pressable>
+        <View style={styles.sheetWrapper}>
+          {/* Navigation Bar */}
+          <View style={styles.navBar}>
+            <Pressable
+              onPress={onClose}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="Back to previous screen"
+              style={state => [
+                styles.navButton,
+                state.pressed && styles.pressedFade,
+                Platform.OS === 'web' && (state as { focused?: boolean }).focused
+                  ? styles.webFocusRing
+                  : null,
+              ]}>
+              <ArrowLeft size={20} color="#121212" />
+              <Label style={styles.navText}>Back</Label>
+            </Pressable>
 
-          {/* Bookmark Action */}
-          <Pressable
-            onPress={handleToggleSave}
-            hitSlop={8}
-            accessibilityRole="button"
-            accessibilityLabel={isSaved ? 'Remove from shortlist' : 'Save to shortlist'}
-            style={[styles.saveButton, isSaved && styles.savedActive]}>
-            <Bookmark
-              size={18}
-              color={isSaved ? '#121212' : '#5A5D54'}
-              fill={isSaved ? '#B8F23E' : 'transparent'}
-            />
-          </Pressable>
+            {/* Bookmark Action */}
+            <Pressable
+              onPress={handleToggleSave}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel={isSaved ? 'Remove from shortlist' : 'Save to shortlist'}
+              style={state => [
+                styles.saveButton,
+                isSaved && styles.savedActive,
+                state.pressed && styles.pressedFade,
+                Platform.OS === 'web' && (state as { focused?: boolean }).focused
+                  ? styles.webFocusRing
+                  : null,
+              ]}>
+              <Bookmark
+                size={18}
+                color={isSaved ? '#121212' : '#5A5D54'}
+                fill={isSaved ? '#B8F23E' : 'transparent'}
+              />
+            </Pressable>
+          </View>
+
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.scrollContent}>
+            {/* Company Hero Card */}
+            <View style={styles.heroCard}>
+              <CompanyLogo company={job.company} size={56} />
+
+              <Heading style={styles.companyHeading}>{job.company}</Heading>
+              <Display style={styles.titleDisplay}>{job.title}</Display>
+              <View style={styles.locationContainer}>
+                <MapPin size={13} color="#5A5D54" />
+                <Body style={styles.locationDetail}>
+                  {job.location} · {job.workplaceType}
+                </Body>
+              </View>
+
+              <View style={styles.metaPillsRow}>
+                <BadgeChip label={job.salary} variant="lime" />
+                <BadgeChip label={job.workplaceType} variant="neutral" />
+                <BadgeChip label={job.employmentType} variant="outline" />
+              </View>
+            </View>
+
+            {/* Company Interview Stages Guide Section */}
+            <View style={styles.sectionHeader}>
+              <Heading style={styles.sectionTitle}>Interview Stages</Heading>
+              <BadgeChip label={`${job.interviewStages.length} Stages`} variant="neutral" />
+            </View>
+
+            <View style={styles.stagesList}>
+              {job.interviewStages.map(stage => (
+                <StageStepCard key={stage.stageNumber} stage={stage} />
+              ))}
+            </View>
+          </ScrollView>
+
+          {/* Bottom CTA Bar: Only when viewed outside tracker and role has not been applied */}
+          {!existingItem ? (
+            <View style={styles.bottomBar}>
+              <PillButton
+                label="APPLY FOR THIS ROLE"
+                variant="dark"
+                onPress={handleApply}
+                style={{ width: '100%' }}
+              />
+            </View>
+          ) : null}
         </View>
-
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}>
-          {/* Company Hero Card (Clean "Detail Biasa") */}
-          <View style={styles.heroCard}>
-            <CompanyLogo company={job.company} size={56} />
-
-            <Heading style={styles.companyHeading}>{job.company}</Heading>
-            <Display style={styles.titleDisplay}>{job.title}</Display>
-            <View style={styles.locationContainer}>
-              <MapPin size={13} color="#5A5D54" />
-              <Body style={styles.locationDetail}>
-                {job.location} · {job.workplaceType}
-              </Body>
-            </View>
-
-            <View style={styles.metaPillsRow}>
-              <BadgeChip label={job.salary} variant="lime" />
-              <BadgeChip label={job.workplaceType} variant="neutral" />
-              <BadgeChip label={job.employmentType} variant="outline" />
-            </View>
-          </View>
-
-          {/* Company Interview Stages Guide Section */}
-          <View style={styles.sectionHeader}>
-            <Heading style={styles.sectionTitle}>Interview Stages</Heading>
-            <BadgeChip label={`${job.interviewStages.length} Stages`} variant="neutral" />
-          </View>
-
-          <View style={styles.stagesList}>
-            {job.interviewStages.map(stage => (
-              <StageStepCard key={stage.stageNumber} stage={stage} />
-            ))}
-          </View>
-        </ScrollView>
-
-        {/* Bottom CTA Bar: Only when viewed outside tracker and role has not been applied */}
-        {!existingItem ? (
-          <View style={styles.bottomBar}>
-            <PillButton
-              label="APPLY FOR THIS ROLE"
-              variant="dark"
-              onPress={handleApply}
-              style={{ width: '100%' }}
-            />
-          </View>
-        ) : null}
       </SafeAreaView>
     </Modal>
   );
@@ -144,6 +172,12 @@ const styles = StyleSheet.create({
   modalContainer: {
     flex: 1,
     backgroundColor: Colors.light.background,
+  },
+  sheetWrapper: {
+    flex: 1,
+    width: '100%',
+    maxWidth: 720,
+    alignSelf: 'center',
   },
   navBar: {
     flexDirection: 'row',
@@ -160,6 +194,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     minHeight: 44,
+    paddingHorizontal: 4,
+    borderRadius: Radius.sm,
+    ...(Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : null),
   },
   navText: {
     fontSize: 14,
@@ -174,6 +211,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
+    ...(Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : null),
   },
   savedActive: {
     backgroundColor: '#EFF3E8',
@@ -245,4 +283,13 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: Colors.light.border,
   },
+  pressedFade: {
+    opacity: 0.78,
+  },
+  webFocusRing: {
+    outlineWidth: 2,
+    outlineStyle: 'solid',
+    outlineColor: '#121212',
+    outlineOffset: 2,
+  } as any,
 });

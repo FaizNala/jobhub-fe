@@ -1,12 +1,13 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { Calendar, Bot, ArrowRight } from 'lucide-react-native';
-import { Radius } from '@/constants/theme';
+import { ArrowRight, Bot, Calendar } from 'lucide-react-native';
+import { Colors, Radius } from '@/constants/theme';
 import { Label } from '@/components/atoms/typography';
 
 interface CareerPulseCardProps {
+  hasScheduledInterview?: boolean;
   nextInterviewCompany?: string;
   nextInterviewStage?: string;
   nextInterviewTime?: string;
@@ -14,20 +15,37 @@ interface CareerPulseCardProps {
 }
 
 export function CareerPulseCard({
-  nextInterviewCompany = 'Uber',
-  nextInterviewStage = 'Technical Deep Dive',
-  nextInterviewTime = 'Thursday, 2:00 PM',
-  hunterDiscoveredCount = 12,
+  hasScheduledInterview = false,
+  nextInterviewCompany,
+  nextInterviewStage,
+  nextInterviewTime,
+  hunterDiscoveredCount = 0,
 }: CareerPulseCardProps) {
   const handleOpenTracker = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-    router.push('/jobs');
+    router.push('/jobs?stage=interviewing' as any);
   };
 
   const handleOpenHunter = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     router.push('/agent');
   };
+
+  const interviewHeadline = hasScheduledInterview && nextInterviewCompany
+    ? `${nextInterviewStage || 'Active Interview'} · ${nextInterviewCompany}`
+    : 'No upcoming interviews yet';
+
+  const interviewSub = hasScheduledInterview && nextInterviewTime
+    ? nextInterviewTime
+    : 'Track shortlisted and applied roles in Pipeline Tracker';
+
+  const hunterHeadline = hunterDiscoveredCount > 0
+    ? `${hunterDiscoveredCount} ${hunterDiscoveredCount === 1 ? 'opportunity' : 'opportunities'} pending review`
+    : 'No scouted roles queued yet';
+
+  const hunterSub = hunterDiscoveredCount > 0
+    ? 'Synced from your active Hunter queue'
+    : 'Open AI Hunter to discover new matching roles';
 
   return (
     <View style={styles.container}>
@@ -38,37 +56,45 @@ export function CareerPulseCard({
         </View>
 
         {/* Row 1: Next Actionable Interview */}
-        <TouchableOpacity
+        <Pressable
           onPress={handleOpenTracker}
-          activeOpacity={0.8}
-          style={styles.actionRow}
+          style={state => [
+            styles.actionRow,
+            state.pressed && styles.pressedFade,
+            Platform.OS === 'web' && (state as { focused?: boolean }).focused
+              ? styles.webFocusRing
+              : null,
+          ]}
           accessibilityRole="button"
           accessibilityLabel="View interview schedule in Tracker">
           <View style={styles.iconCircle}>
-            <Calendar size={18} color="#16A34A" strokeWidth={2.2} />
+            <Calendar size={18} color="#15803D" strokeWidth={2.2} />
           </View>
 
           <View style={styles.infoCol}>
             <View style={styles.labelRow}>
-              <Text style={styles.rowTypeLabel}>Next Interview</Text>
-              <View style={styles.activeDot} />
+              <Text style={styles.rowTypeLabel}>Interview Loop</Text>
+              {hasScheduledInterview ? <View style={styles.activeDot} /> : null}
             </View>
-            <Text style={styles.mainTitle}>
-              {nextInterviewStage} · {nextInterviewCompany}
-            </Text>
-            <Text style={styles.subText}>{nextInterviewTime} (Stage 2 of 4)</Text>
+            <Text style={styles.mainTitle}>{interviewHeadline}</Text>
+            <Text style={styles.subText}>{interviewSub}</Text>
           </View>
 
-          <ArrowRight size={14} color="#8A8D84" />
-        </TouchableOpacity>
+          <ArrowRight size={15} color="#5A5D54" />
+        </Pressable>
 
         <View style={styles.divider} />
 
         {/* Row 2: Discovered Opportunities Feed */}
-        <TouchableOpacity
+        <Pressable
           onPress={handleOpenHunter}
-          activeOpacity={0.8}
-          style={styles.actionRow}
+          style={state => [
+            styles.actionRow,
+            state.pressed && styles.pressedFade,
+            Platform.OS === 'web' && (state as { focused?: boolean }).focused
+              ? styles.webFocusRing
+              : null,
+          ]}
           accessibilityRole="button"
           accessibilityLabel="Open AI Hunter radar">
           <View style={[styles.iconCircle, styles.hunterIconCircle]}>
@@ -79,14 +105,12 @@ export function CareerPulseCard({
             <View style={styles.labelRow}>
               <Text style={styles.rowTypeLabel}>Discovered Matches</Text>
             </View>
-            <Text style={styles.mainTitle}>
-              {hunterDiscoveredCount} opportunities pending review
-            </Text>
-            <Text style={styles.subText}>Synced from your active agent queue</Text>
+            <Text style={styles.mainTitle}>{hunterHeadline}</Text>
+            <Text style={styles.subText}>{hunterSub}</Text>
           </View>
 
-          <ArrowRight size={14} color="#8A8D84" />
-        </TouchableOpacity>
+          <ArrowRight size={15} color="#5A5D54" />
+        </Pressable>
       </View>
     </View>
   );
@@ -98,16 +122,11 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: '#FFFFFF',
-    borderRadius: Radius.xl,
-    borderWidth: 1,
-    borderColor: '#E2E6DC',
+    borderRadius: Radius.md,
+    borderWidth: 1.5,
+    borderColor: Colors.light.border,
     padding: 16,
     gap: 12,
-    shadowColor: '#121212',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.03,
-    shadowRadius: 6,
-    elevation: 2,
   },
   headerRow: {
     flexDirection: 'row',
@@ -115,25 +134,29 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   headerLabel: {
-    fontSize: 12,
-    fontWeight: '700',
+    fontSize: 12.5,
+    fontWeight: '800',
     color: '#121212',
-    letterSpacing: -0.2,
+    letterSpacing: -0.1,
   },
   headerSub: {
     fontSize: 11,
-    fontWeight: '500',
-    color: '#73786B',
+    fontWeight: '600',
+    color: '#5A5D54',
   },
   actionRow: {
+    minHeight: 56,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+    paddingVertical: 4,
+    borderRadius: Radius.sm,
+    ...(Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : null),
   },
   iconCircle: {
     width: 40,
     height: 40,
-    borderRadius: 20,
+    borderRadius: Radius.full,
     backgroundColor: '#DCFCE7',
     alignItems: 'center',
     justifyContent: 'center',
@@ -156,10 +179,10 @@ const styles = StyleSheet.create({
     color: '#5A5D54',
   },
   activeDot: {
-    width: 5,
-    height: 5,
-    borderRadius: 2.5,
-    backgroundColor: '#16A34A',
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#15803D',
   },
   mainTitle: {
     fontSize: 13.5,
@@ -168,10 +191,20 @@ const styles = StyleSheet.create({
   },
   subText: {
     fontSize: 11.5,
-    color: '#73786B',
+    color: '#5A5D54',
+    lineHeight: 16,
   },
   divider: {
     height: 1,
     backgroundColor: '#F0F3EA',
   },
+  pressedFade: {
+    opacity: 0.78,
+  },
+  webFocusRing: {
+    outlineWidth: 2,
+    outlineStyle: 'solid',
+    outlineColor: '#121212',
+    outlineOffset: 2,
+  } as any,
 });

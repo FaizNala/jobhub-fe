@@ -1,16 +1,36 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { FileCheck, ArrowRight } from 'lucide-react-native';
-import { Radius } from '@/constants/theme';
-import { Label } from '@/components/atoms/typography';
+import { ArrowRight, FileCheck } from 'lucide-react-native';
+import { Colors, Radius } from '@/constants/theme';
 
-export function DossierReadinessCard() {
+interface DossierReadinessCardProps {
+  candidateName?: string;
+  atsScore?: number;
+  summaryText?: string;
+}
+
+export function DossierReadinessCard({
+  candidateName,
+  atsScore,
+  summaryText,
+}: DossierReadinessCardProps) {
   const handleOpenCv = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     router.push('/cv');
   };
+
+  const headline =
+    candidateName && typeof atsScore === 'number'
+      ? `${candidateName} · ${atsScore}% CV Readiness`
+      : candidateName
+        ? `${candidateName} · Career Dossier`
+        : 'Master Career Dossier';
+
+  const subtitle =
+    summaryText ||
+    'Master resume formatted for ATS readability across target roles. Open CV Studio to review or export.';
 
   return (
     <View style={styles.container}>
@@ -21,23 +41,26 @@ export function DossierReadinessCard() {
           </View>
 
           <View style={styles.headerInfo}>
-            <Text style={styles.categoryLabel}>Resume & Profile</Text>
-            <Text style={styles.title}>Michel Clark • 94% ATS Strength</Text>
-            <Text style={styles.subtitle}>
-              Profile formatted and tailored for senior mobile roles. Ready to export or update.
-            </Text>
+            <Text style={styles.categoryLabel}>RESUME & DOSSIER</Text>
+            <Text style={styles.title}>{headline}</Text>
+            <Text style={styles.subtitle}>{subtitle}</Text>
           </View>
         </View>
 
-        <TouchableOpacity
+        <Pressable
           onPress={handleOpenCv}
-          activeOpacity={0.8}
-          style={styles.actionBtn}
+          style={state => [
+            styles.actionBtn,
+            state.pressed && styles.pressedFade,
+            Platform.OS === 'web' && (state as { focused?: boolean }).focused
+              ? styles.webFocusRing
+              : null,
+          ]}
           accessibilityRole="button"
           accessibilityLabel="Open CV Studio and export PDF">
           <Text style={styles.actionBtnText}>Open CV Studio & Export PDF</Text>
-          <ArrowRight size={13} color="#121212" strokeWidth={2.4} />
-        </TouchableOpacity>
+          <ArrowRight size={14} color="#121212" strokeWidth={2.4} />
+        </Pressable>
       </View>
     </View>
   );
@@ -49,16 +72,11 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: '#FFFFFF',
-    borderRadius: Radius.xl,
-    borderWidth: 1,
-    borderColor: '#E2E6DC',
+    borderRadius: Radius.md,
+    borderWidth: 1.5,
+    borderColor: Colors.light.border,
     padding: 16,
     gap: 12,
-    shadowColor: '#121212',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.03,
-    shadowRadius: 6,
-    elevation: 2,
   },
   topRow: {
     flexDirection: 'row',
@@ -68,10 +86,10 @@ const styles = StyleSheet.create({
   iconCircle: {
     width: 40,
     height: 40,
-    borderRadius: 20,
+    borderRadius: Radius.full,
     backgroundColor: '#F4FDE8',
     borderWidth: 1,
-    borderColor: '#D9F99D',
+    borderColor: '#C5E88B',
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 2,
@@ -84,6 +102,7 @@ const styles = StyleSheet.create({
     fontSize: 10.5,
     fontWeight: '700',
     color: '#5A5D54',
+    letterSpacing: 0.4,
   },
   title: {
     fontSize: 14,
@@ -97,20 +116,31 @@ const styles = StyleSheet.create({
     lineHeight: 16,
   },
   actionBtn: {
+    minHeight: 44,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: '#F4F6F0',
     borderWidth: 1,
-    borderColor: '#E2E6DC',
-    borderRadius: Radius.md,
+    borderColor: Colors.light.border,
+    borderRadius: Radius.sm,
     paddingVertical: 10,
-    paddingHorizontal: 12,
+    paddingHorizontal: 14,
     marginTop: 2,
+    ...(Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : null),
   },
   actionBtnText: {
     fontSize: 12,
     fontWeight: '700',
     color: '#121212',
   },
+  pressedFade: {
+    opacity: 0.78,
+  },
+  webFocusRing: {
+    outlineWidth: 2,
+    outlineStyle: 'solid',
+    outlineColor: '#121212',
+    outlineOffset: 2,
+  } as any,
 });

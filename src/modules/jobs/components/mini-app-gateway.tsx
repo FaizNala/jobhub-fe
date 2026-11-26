@@ -1,19 +1,21 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { Layers, Bot, FileText, Briefcase } from 'lucide-react-native';
-import { Radius } from '@/constants/theme';
+import { Bot, Briefcase, FileText, Layers } from 'lucide-react-native';
+import { Colors, Radius } from '@/constants/theme';
 import { Label } from '@/components/atoms/typography';
 
 interface MiniAppGatewayProps {
   onOpenDailyMatch: () => void;
   unreviewedMatchCount?: number;
+  hunterDiscoveredCount?: number;
 }
 
 export function MiniAppGateway({
   onOpenDailyMatch,
-  unreviewedMatchCount = 5,
+  unreviewedMatchCount = 0,
+  hunterDiscoveredCount = 0,
 }: MiniAppGatewayProps) {
   const handleOpenDailyMatch = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
@@ -30,15 +32,20 @@ export function MiniAppGateway({
       <View style={styles.card}>
         <View style={styles.headerRow}>
           <Label style={styles.headerLabel}>Quick Access</Label>
-          <Text style={styles.headerSub}>Shortcuts</Text>
+          <Text style={styles.headerSub}>Workspace tools</Text>
         </View>
 
         <View style={styles.stripRow}>
           {/* Action 1: Daily Match Deck */}
-          <TouchableOpacity
+          <Pressable
             onPress={handleOpenDailyMatch}
-            activeOpacity={0.75}
-            style={styles.actionItem}
+            style={state => [
+              styles.actionItem,
+              state.pressed && styles.pressedFade,
+              Platform.OS === 'web' && (state as { focused?: boolean }).focused
+                ? styles.webFocusRing
+                : null,
+            ]}
             accessibilityRole="button"
             accessibilityLabel="Open Daily Match Deck">
             <View style={[styles.iconSquircle, styles.heroIconSquircle]}>
@@ -50,47 +57,62 @@ export function MiniAppGateway({
               ) : null}
             </View>
             <Text style={styles.actionLabel}>Match Deck</Text>
-          </TouchableOpacity>
+          </Pressable>
 
           {/* Action 2: AI Hunter */}
-          <TouchableOpacity
+          <Pressable
             onPress={() => handleNavigate('/agent')}
-            activeOpacity={0.75}
-            style={styles.actionItem}
+            style={state => [
+              styles.actionItem,
+              state.pressed && styles.pressedFade,
+              Platform.OS === 'web' && (state as { focused?: boolean }).focused
+                ? styles.webFocusRing
+                : null,
+            ]}
             accessibilityRole="button"
             accessibilityLabel="Open AI Hunter">
             <View style={styles.iconSquircle}>
               <Bot size={20} color="#121212" strokeWidth={2.2} />
-              <View style={styles.livePip} />
+              {hunterDiscoveredCount > 0 ? <View style={styles.livePip} /> : null}
             </View>
             <Text style={styles.actionLabel}>AI Hunter</Text>
-          </TouchableOpacity>
+          </Pressable>
 
           {/* Action 3: CV Studio */}
-          <TouchableOpacity
+          <Pressable
             onPress={() => handleNavigate('/cv')}
-            activeOpacity={0.75}
-            style={styles.actionItem}
+            style={state => [
+              styles.actionItem,
+              state.pressed && styles.pressedFade,
+              Platform.OS === 'web' && (state as { focused?: boolean }).focused
+                ? styles.webFocusRing
+                : null,
+            ]}
             accessibilityRole="button"
             accessibilityLabel="Open CV Studio">
             <View style={styles.iconSquircle}>
               <FileText size={20} color="#121212" strokeWidth={2.2} />
             </View>
             <Text style={styles.actionLabel}>CV Studio</Text>
-          </TouchableOpacity>
+          </Pressable>
 
           {/* Action 4: Pipeline Tracker */}
-          <TouchableOpacity
+          <Pressable
             onPress={() => handleNavigate('/jobs')}
-            activeOpacity={0.75}
-            style={styles.actionItem}
+            style={state => [
+              styles.actionItem,
+              state.pressed && styles.pressedFade,
+              Platform.OS === 'web' && (state as { focused?: boolean }).focused
+                ? styles.webFocusRing
+                : null,
+            ]}
             accessibilityRole="button"
             accessibilityLabel="Open Job Tracker">
             <View style={styles.iconSquircle}>
               <Briefcase size={20} color="#121212" strokeWidth={2.2} />
             </View>
             <Text style={styles.actionLabel}>Tracker</Text>
-          </TouchableOpacity>
+          </Pressable>
         </View>
       </View>
     </View>
@@ -103,17 +125,12 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: '#FFFFFF',
-    borderRadius: Radius.xl,
-    borderWidth: 1,
-    borderColor: '#E2E6DC',
+    borderRadius: Radius.md,
+    borderWidth: 1.5,
+    borderColor: Colors.light.border,
     paddingVertical: 14,
     paddingHorizontal: 16,
     gap: 12,
-    shadowColor: '#121212',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.03,
-    shadowRadius: 6,
-    elevation: 2,
   },
   headerRow: {
     flexDirection: 'row',
@@ -121,55 +138,61 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   headerLabel: {
-    fontSize: 12,
-    fontWeight: '700',
+    fontSize: 12.5,
+    fontWeight: '800',
     color: '#121212',
-    letterSpacing: -0.2,
+    letterSpacing: -0.1,
   },
   headerSub: {
     fontSize: 11,
-    fontWeight: '500',
-    color: '#73786B',
+    fontWeight: '600',
+    color: '#5A5D54',
   },
   stripRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: 6,
   },
   actionItem: {
+    minHeight: 70,
     alignItems: 'center',
+    justifyContent: 'center',
     gap: 6,
     flex: 1,
+    paddingVertical: 4,
+    borderRadius: Radius.sm,
+    ...(Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : null),
   },
   iconSquircle: {
     width: 48,
     height: 48,
-    borderRadius: 14,
+    borderRadius: Radius.md,
     backgroundColor: '#F4F6F0',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#E8ECDF',
+    borderColor: Colors.light.border,
   },
   heroIconSquircle: {
     backgroundColor: '#B8F23E',
-    borderColor: '#A3E62B',
+    borderColor: '#9ED42B',
   },
   badgePip: {
     position: 'absolute',
-    top: -3,
-    right: -3,
+    top: -4,
+    right: -4,
     backgroundColor: '#121212',
-    minWidth: 16,
-    height: 16,
-    borderRadius: 8,
+    minWidth: 18,
+    height: 18,
+    borderRadius: Radius.full,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 4,
   },
   badgePipText: {
     color: '#B8F23E',
-    fontSize: 9,
+    fontSize: 9.5,
     fontWeight: '800',
   },
   livePip: {
@@ -179,13 +202,22 @@ const styles = StyleSheet.create({
     width: 7,
     height: 7,
     borderRadius: 3.5,
-    backgroundColor: '#16A34A',
+    backgroundColor: '#15803D',
     borderWidth: 1.5,
     borderColor: '#FFFFFF',
   },
   actionLabel: {
-    fontSize: 11,
+    fontSize: 11.5,
     fontWeight: '600',
-    color: '#3A3D36',
+    color: '#121212',
   },
+  pressedFade: {
+    opacity: 0.78,
+  },
+  webFocusRing: {
+    outlineWidth: 2,
+    outlineStyle: 'solid',
+    outlineColor: '#121212',
+    outlineOffset: 2,
+  } as any,
 });
