@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import {
+  ActivityIndicator,
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
+  Pressable,
   ScrollView,
   useWindowDimensions,
   Platform,
@@ -11,15 +12,74 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { Check, ArrowRight, ArrowLeft, Sparkles, Globe, Building2, MapPin } from 'lucide-react-native';
-import { Radius } from '@/constants/theme';
-import { useOnboardingStore, CandidateProfile } from '@/modules/onboarding';
+import { Check, ArrowRight, ArrowLeft, Globe, Building2, MapPin } from 'lucide-react-native';
+import { Colors, Radius } from '@/constants/theme';
+import {
+  buildCvProfileUpdateFromOnboarding,
+  CandidateProfile,
+  useOnboardingStore,
+} from '@/modules/onboarding';
+import { cvService } from '@/modules/cv-studio';
+
+interface ChipOptionProps {
+  label: string;
+  selected: boolean;
+  onPress: () => void;
+  variant?: 'single' | 'multi';
+}
+
+function ChipOption({
+  label,
+  selected,
+  onPress,
+  variant = 'single',
+}: ChipOptionProps) {
+  const isMulti = variant === 'multi';
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed, focused }: any) => [
+        styles.chip,
+        selected
+          ? isMulti
+            ? styles.chipMultiSelected
+            : styles.chipSelected
+          : styles.chipUnselected,
+        Platform.OS === 'web' && focused && styles.webFocusRing,
+        pressed && styles.pressedSoft,
+      ]}
+      accessibilityRole={isMulti ? 'checkbox' : 'radio'}
+      accessibilityLabel={label}
+      accessibilityState={{ checked: selected }}>
+      {selected && (
+        <Check
+          size={14}
+          color={isMulti ? '#2F4F00' : '#B8F23E'}
+          strokeWidth={2.6}
+        />
+      )}
+      <Text
+        style={[
+          styles.chipText,
+          selected
+            ? isMulti
+              ? styles.chipMultiTextSelected
+              : styles.chipTextSelected
+            : styles.chipTextUnselected,
+        ]}>
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
 
 export default function SetupProfileScreen() {
   const { width } = useWindowDimensions();
   const isDesktop = width >= 768;
 
   const [currentStep, setCurrentStep] = useState(1);
+  const [skillLimitHint, setSkillLimitHint] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const saveProfileSetup = useOnboardingStore((state) => state.saveProfileSetup);
   const existingProfile = useOnboardingStore((state) => state.candidateProfile);
 
@@ -88,73 +148,129 @@ export default function SetupProfileScreen() {
   const toggleStack = (tech: string) => {
     Haptics.selectionAsync().catch(() => {});
     if (selectedStack.includes(tech)) {
-      if (selectedStack.length > 1) {
-        setSelectedStack(selectedStack.filter((t) => t !== tech));
+      if (selectedStack.length <= 1) {
+        setSkillLimitHint('Select at least 1 core skill so Hunter can tailor job matches.');
+        return;
       }
+      setSkillLimitHint(null);
+      setSelectedStack(selectedStack.filter((t) => t !== tech));
     } else {
+      setSkillLimitHint(null);
       setSelectedStack([...selectedStack, tech]);
     }
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
+    if (isSaving) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     if (currentStep < 3) {
       setCurrentStep((prev) => prev + 1);
-    } else {
-      // Final submission
-      const profileData: Partial<CandidateProfile> = {
-        role: selectedRole,
-        seniority: selectedSeniority,
-        techStack: selectedStack,
-        workMode: selectedWorkMode,
-        targetSalary: selectedSalary,
-      };
+      return;
+    }
+
+    setIsSaving(true);
+    const profileData: Partial<CandidateProfile> = {
+      role: selectedRole,
+      seniority: selectedSeniority,
+      techStack: selectedStack,
+      workMode: selectedWorkMode,
+      targetSalary: selectedSalary,
+    };
+
+    try {
       saveProfileSetup(profileData);
+      const mergedProfile: CandidateProfile = {
+        ...existingProfile,
+        ...profileData,
+      };
+      const existingCvRes = await cvService.getProfile();
+      const dto = buildCvProfileUpdateFromOnboarding(
+        mergedProfile,
+        existingCvRes.data
+      );
+      await cvService.updateProfile(dto);
+    } catch {
+      // Local onboarding store already persisted; avoid blocking workspace entry when offline
+    } finally {
+      setIsSaving(false);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
       router.replace('/');
     }
   };
 
   const handleBack = () => {
+    if (isSaving) return;
     Haptics.selectionAsync().catch(() => {});
+    setSkillLimitHint(null);
     if (currentStep > 1) {
       setCurrentStep((prev) => prev - 1);
     }
+  };
+
+  const handleSkipSetup = () => {
+    if (isSaving) return;
+    Haptics.selectionAsync().catch(() => {});
+    router.replace('/');
   };
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.root}>
         <View style={[styles.card, isDesktop && styles.desktopCard]}>
-          {/* Progress Header */}
+          {/* Stepper Header (Matching Match Deck & CV Builder) */}
           <View style={styles.header}>
             <View style={styles.headerTopRow}>
               {currentStep > 1 ? (
-                <TouchableOpacity
+                <Pressable
                   onPress={handleBack}
-                  style={styles.backButton}
+                  disabled={isSaving}
+                  style={({ pressed, focused }: any) => [
+                    styles.backButton,
+                    Platform.OS === 'web' && focused && styles.webFocusRing,
+                    pressed && styles.pressedSoft,
+                  ]}
                   accessibilityRole="button"
                   accessibilityLabel="Go to previous setup step">
                   <ArrowLeft size={18} color="#121212" />
-                </TouchableOpacity>
-              ) : (
-                <View style={{ width: 32 }} />
-              )}
-              <View style={styles.stepBadge}>
-                <Sparkles size={13} color="#3F6212" />
-                <Text style={styles.stepBadgeText}>Step {currentStep} of 3</Text>
-              </View>
-              <View style={{ width: 32 }} />
-            </View>
+                </Pressable>
+              ) : null}
 
-            {/* Segmented Progress Bar */}
-            <View style={styles.progressBarTrack}>
-              <View
-                style={[
-                  styles.progressBarFill,
-                  { width: `${(currentStep / 3) * 100}%` },
+              <View style={styles.progressTrackWrap}>
+                <View
+                  style={styles.segmentsRow}
+                  accessibilityRole="progressbar"
+                  accessibilityLabel="Profile setup progress"
+                  accessibilityValue={{ min: 1, max: 3, now: currentStep }}>
+                  {[1, 2, 3].map((stepNum) => {
+                    const isDone = stepNum < currentStep;
+                    const isCurrent = stepNum === currentStep;
+                    return (
+                      <View
+                        key={stepNum}
+                        style={[
+                          styles.progressSegment,
+                          isDone && styles.progressSegmentDone,
+                          isCurrent && styles.progressSegmentActive,
+                        ]}
+                      />
+                    );
+                  })}
+                </View>
+                <Text style={styles.progressLabel}>{currentStep} / 3</Text>
+              </View>
+
+              <Pressable
+                onPress={handleSkipSetup}
+                disabled={isSaving}
+                style={({ pressed, focused }: any) => [
+                  styles.skipButton,
+                  Platform.OS === 'web' && focused && styles.webFocusRing,
+                  pressed && styles.pressedSoft,
                 ]}
-              />
+                accessibilityRole="button"
+                accessibilityLabel="Skip profile setup for now">
+                <Text style={styles.skipButtonText}>Skip</Text>
+              </Pressable>
             </View>
           </View>
 
@@ -172,65 +288,33 @@ export default function SetupProfileScreen() {
                 </Text>
 
                 <Text style={styles.groupLabel}>PRIMARY FOCUS</Text>
-                <View style={styles.chipGrid}>
-                  {roles.map((role) => {
-                    const isSelected = selectedRole === role;
-                    return (
-                      <TouchableOpacity
-                        key={role}
-                        onPress={() => {
-                          Haptics.selectionAsync().catch(() => {});
-                          setSelectedRole(role);
-                        }}
-                        style={[
-                          styles.chip,
-                          isSelected ? styles.chipSelected : styles.chipUnselected,
-                        ]}
-                        activeOpacity={0.8}
-                        accessibilityRole="button"
-                        accessibilityLabel={role}>
-                        {isSelected && <Check size={14} color="#B8F23E" strokeWidth={2.6} />}
-                        <Text
-                          style={[
-                            styles.chipText,
-                            isSelected ? styles.chipTextSelected : styles.chipTextUnselected,
-                          ]}>
-                          {role}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
+                <View style={styles.chipGrid} accessibilityRole="radiogroup">
+                  {roles.map((role) => (
+                    <ChipOption
+                      key={role}
+                      label={role}
+                      selected={selectedRole === role}
+                      onPress={() => {
+                        Haptics.selectionAsync().catch(() => {});
+                        setSelectedRole(role);
+                      }}
+                    />
+                  ))}
                 </View>
 
                 <Text style={[styles.groupLabel, { marginTop: 20 }]}>SENIORITY LEVEL</Text>
-                <View style={styles.chipGrid}>
-                  {seniorities.map((level) => {
-                    const isSelected = selectedSeniority === level;
-                    return (
-                      <TouchableOpacity
-                        key={level}
-                        onPress={() => {
-                          Haptics.selectionAsync().catch(() => {});
-                          setSelectedSeniority(level);
-                        }}
-                        style={[
-                          styles.chip,
-                          isSelected ? styles.chipSelected : styles.chipUnselected,
-                        ]}
-                        activeOpacity={0.8}
-                        accessibilityRole="button"
-                        accessibilityLabel={level}>
-                        {isSelected && <Check size={14} color="#B8F23E" strokeWidth={2.6} />}
-                        <Text
-                          style={[
-                            styles.chipText,
-                            isSelected ? styles.chipTextSelected : styles.chipTextUnselected,
-                          ]}>
-                          {level}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
+                <View style={styles.chipGrid} accessibilityRole="radiogroup">
+                  {seniorities.map((level) => (
+                    <ChipOption
+                      key={level}
+                      label={level}
+                      selected={selectedSeniority === level}
+                      onPress={() => {
+                        Haptics.selectionAsync().catch(() => {});
+                        setSelectedSeniority(level);
+                      }}
+                    />
+                  ))}
                 </View>
               </View>
             )}
@@ -243,31 +327,29 @@ export default function SetupProfileScreen() {
                   Tap the key competencies and tools you want your next opportunity to prioritize.
                 </Text>
 
+                <View style={styles.groupHeaderRow}>
+                  <Text style={styles.groupLabelInline}>CORE SKILLS</Text>
+                  <Text style={styles.selectionCounter}>
+                    {selectedStack.length} selected · Min. 1
+                  </Text>
+                </View>
+
+                {skillLimitHint ? (
+                  <Text style={styles.skillLimitHint} accessibilityLiveRegion="polite">
+                    {skillLimitHint}
+                  </Text>
+                ) : null}
+
                 <View style={styles.chipGrid}>
-                  {skillOptions.map((skill) => {
-                    const isSelected = selectedStack.includes(skill);
-                    return (
-                      <TouchableOpacity
-                        key={skill}
-                        onPress={() => toggleStack(skill)}
-                        style={[
-                          styles.chip,
-                          isSelected ? styles.chipSelected : styles.chipUnselected,
-                        ]}
-                        activeOpacity={0.8}
-                        accessibilityRole="button"
-                        accessibilityLabel={skill}>
-                        {isSelected && <Check size={14} color="#B8F23E" strokeWidth={2.6} />}
-                        <Text
-                          style={[
-                            styles.chipText,
-                            isSelected ? styles.chipTextSelected : styles.chipTextUnselected,
-                          ]}>
-                          {skill}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
+                  {skillOptions.map((skill) => (
+                    <ChipOption
+                      key={skill}
+                      label={skill}
+                      variant="multi"
+                      selected={selectedStack.includes(skill)}
+                      onPress={() => toggleStack(skill)}
+                    />
+                  ))}
                 </View>
               </View>
             )}
@@ -281,24 +363,26 @@ export default function SetupProfileScreen() {
                 </Text>
 
                 <Text style={styles.groupLabel}>WORK ARRANGEMENT</Text>
-                <View style={styles.cardOptionGroup}>
+                <View style={styles.cardOptionGroup} accessibilityRole="radiogroup">
                   {workModes.map((mode) => {
                     const isSelected = selectedWorkMode === mode.id;
                     const IconComp = mode.icon;
                     return (
-                      <TouchableOpacity
+                      <Pressable
                         key={mode.id}
                         onPress={() => {
                           Haptics.selectionAsync().catch(() => {});
                           setSelectedWorkMode(mode.id as any);
                         }}
-                        style={[
+                        style={({ pressed, focused }: any) => [
                           styles.modeCard,
                           isSelected ? styles.modeCardSelected : styles.modeCardUnselected,
+                          Platform.OS === 'web' && focused && styles.webFocusRing,
+                          pressed && styles.pressedSoft,
                         ]}
-                        activeOpacity={0.8}
-                        accessibilityRole="button"
-                        accessibilityLabel={mode.label}>
+                        accessibilityRole="radio"
+                        accessibilityLabel={mode.label}
+                        accessibilityState={{ checked: isSelected }}>
                         <View style={styles.modeCardLeft}>
                           <View
                             style={[
@@ -311,7 +395,7 @@ export default function SetupProfileScreen() {
                               strokeWidth={2}
                             />
                           </View>
-                          <View>
+                          <View style={{ flexShrink: 1 }}>
                             <Text
                               style={[
                                 styles.modeCardTitle,
@@ -319,7 +403,13 @@ export default function SetupProfileScreen() {
                               ]}>
                               {mode.label}
                             </Text>
-                            <Text style={styles.modeCardDesc}>{mode.desc}</Text>
+                            <Text
+                              style={[
+                                styles.modeCardDesc,
+                                isSelected && styles.modeCardDescSelected,
+                              ]}>
+                              {mode.desc}
+                            </Text>
                           </View>
                         </View>
                         {isSelected && (
@@ -327,40 +417,24 @@ export default function SetupProfileScreen() {
                             <Check size={14} color="#121212" strokeWidth={2.6} />
                           </View>
                         )}
-                      </TouchableOpacity>
+                      </Pressable>
                     );
                   })}
                 </View>
 
                 <Text style={[styles.groupLabel, { marginTop: 20 }]}>TARGET ANNUAL BASE</Text>
-                <View style={styles.chipGrid}>
-                  {salaryRanges.map((sal) => {
-                    const isSelected = selectedSalary === sal;
-                    return (
-                      <TouchableOpacity
-                        key={sal}
-                        onPress={() => {
-                          Haptics.selectionAsync().catch(() => {});
-                          setSelectedSalary(sal);
-                        }}
-                        style={[
-                          styles.chip,
-                          isSelected ? styles.chipSelected : styles.chipUnselected,
-                        ]}
-                        activeOpacity={0.8}
-                        accessibilityRole="button"
-                        accessibilityLabel={sal}>
-                        {isSelected && <Check size={14} color="#B8F23E" strokeWidth={2.6} />}
-                        <Text
-                          style={[
-                            styles.chipText,
-                            isSelected ? styles.chipTextSelected : styles.chipTextUnselected,
-                          ]}>
-                          {sal}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
+                <View style={styles.chipGrid} accessibilityRole="radiogroup">
+                  {salaryRanges.map((sal) => (
+                    <ChipOption
+                      key={sal}
+                      label={sal}
+                      selected={selectedSalary === sal}
+                      onPress={() => {
+                        Haptics.selectionAsync().catch(() => {});
+                        setSelectedSalary(sal);
+                      }}
+                    />
+                  ))}
                 </View>
               </View>
             )}
@@ -368,22 +442,31 @@ export default function SetupProfileScreen() {
 
           {/* Bottom Action Footer */}
           <View style={styles.footer}>
-            <TouchableOpacity
+            <Pressable
               onPress={handleNext}
-              style={[
+              disabled={isSaving}
+              style={({ pressed, focused }: any) => [
                 styles.primaryButton,
-                Platform.OS === 'web' && ({ outline: 'none' } as any),
+                isSaving && styles.primaryButtonDisabled,
+                Platform.OS === 'web' && focused && styles.webFocusRing,
+                pressed && !isSaving && styles.primaryButtonPressed,
               ]}
-              activeOpacity={0.88}
               accessibilityRole="button"
+              accessibilityState={{ busy: isSaving, disabled: isSaving }}
               accessibilityLabel={
                 currentStep === 3 ? 'Finish and launch career gateway' : 'Continue to next step'
               }>
-              <Text style={styles.primaryButtonText}>
-                {currentStep === 3 ? 'Launch my career gateway' : 'Continue'}
-              </Text>
-              <ArrowRight size={18} color="#121212" strokeWidth={2.4} />
-            </TouchableOpacity>
+              {isSaving ? (
+                <ActivityIndicator size="small" color="#121212" />
+              ) : (
+                <>
+                  <Text style={styles.primaryButtonText}>
+                    {currentStep === 3 ? 'Launch my career gateway' : 'Continue'}
+                  </Text>
+                  <ArrowRight size={18} color="#121212" strokeWidth={2.4} />
+                </>
+              )}
+            </Pressable>
           </View>
         </View>
       </View>
@@ -394,74 +477,99 @@ export default function SetupProfileScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.light.background,
   },
   root: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.light.background,
     alignItems: 'center',
     justifyContent: 'center',
   },
   card: {
     flex: 1,
     width: '100%',
+    backgroundColor: Colors.light.card,
     paddingHorizontal: 24,
-    paddingVertical: 16,
+    paddingTop: 16,
+    paddingBottom: 12,
     justifyContent: 'space-between',
   },
   desktopCard: {
     maxWidth: 580,
     maxHeight: 780,
-    borderRadius: 24,
+    borderRadius: Radius.lg,
     borderWidth: 1.5,
-    borderColor: '#E2E6DC',
-    paddingVertical: 32,
+    borderColor: Colors.light.border,
+    paddingTop: 28,
+    paddingBottom: 20,
     paddingHorizontal: 40,
   },
 
   /* Header */
   header: {
-    paddingBottom: 16,
+    paddingBottom: 10,
   },
   headerTopRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 16,
+    gap: 14,
   },
   backButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#F1F5F9',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: Colors.light.background,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
     alignItems: 'center',
     justifyContent: 'center',
+    ...Platform.select({ web: { cursor: 'pointer' } as any, default: {} }),
   },
-  stepBadge: {
+  progressTrackWrap: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    backgroundColor: '#F0F5E9',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 6,
+    gap: 10,
   },
-  stepBadgeText: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: '#3F6212',
-    letterSpacing: 0.4,
+  segmentsRow: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
   },
-  progressBarTrack: {
-    width: '100%',
+  progressSegment: {
+    flex: 1,
     height: 4,
-    backgroundColor: '#E2E6DC',
     borderRadius: 2,
-    overflow: 'hidden',
+    backgroundColor: '#D6DCD0',
   },
-  progressBarFill: {
-    height: '100%',
-    backgroundColor: '#B8F23E',
+  progressSegmentDone: {
+    backgroundColor: '#121212',
+  },
+  progressSegmentActive: {
+    backgroundColor: '#2E6F00',
+  },
+  progressLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: Colors.light.textMuted,
+    letterSpacing: 0.2,
+    fontVariant: ['tabular-nums'],
+  },
+  skipButton: {
+    minWidth: 44,
+    minHeight: 44,
+    paddingHorizontal: 8,
+    borderRadius: Radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...Platform.select({ web: { cursor: 'pointer' } as any, default: {} }),
+  },
+  skipButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.light.textMuted,
   },
 
   /* Scrollable Form Content */
@@ -469,7 +577,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingVertical: 8,
+    paddingTop: 8,
+    paddingBottom: 20,
   },
   stepSection: {
     paddingVertical: 8,
@@ -484,15 +593,38 @@ const styles = StyleSheet.create({
   },
   stepSubtitle: {
     fontSize: 14,
-    color: '#64748B',
+    color: '#5A5D54',
     lineHeight: 20,
     marginBottom: 20,
   },
   groupLabel: {
     fontSize: 11,
     fontWeight: '800',
-    color: '#64748B',
+    color: '#5A5D54',
     letterSpacing: 0.8,
+    marginBottom: 10,
+  },
+  groupHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  groupLabelInline: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#5A5D54',
+    letterSpacing: 0.8,
+  },
+  selectionCounter: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#5A5D54',
+  },
+  skillLimitHint: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#991B1B',
     marginBottom: 10,
   },
 
@@ -506,18 +638,24 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
+    minHeight: 44,
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: Radius.full,
     borderWidth: 1.5,
+    ...Platform.select({ web: { cursor: 'pointer' } as any, default: {} }),
   },
   chipSelected: {
     backgroundColor: '#121212',
     borderColor: '#121212',
   },
+  chipMultiSelected: {
+    backgroundColor: '#EFFCD3',
+    borderColor: '#4D7C0F',
+  },
   chipUnselected: {
-    backgroundColor: '#F8FAFC',
-    borderColor: '#E2E8F0',
+    backgroundColor: '#F9FAF7',
+    borderColor: Colors.light.border,
   },
   chipText: {
     fontSize: 14,
@@ -526,8 +664,11 @@ const styles = StyleSheet.create({
   chipTextSelected: {
     color: '#FFFFFF',
   },
+  chipMultiTextSelected: {
+    color: '#121212',
+  },
   chipTextUnselected: {
-    color: '#1E293B',
+    color: '#121212',
   },
 
   /* Mode Cards */
@@ -538,22 +679,26 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    minHeight: 68,
     padding: 14,
-    borderRadius: 14,
+    borderRadius: Radius.md,
     borderWidth: 1.5,
+    ...Platform.select({ web: { cursor: 'pointer' } as any, default: {} }),
   },
   modeCardSelected: {
     backgroundColor: '#121212',
     borderColor: '#121212',
   },
   modeCardUnselected: {
-    backgroundColor: '#F8FAFC',
-    borderColor: '#E2E8F0',
+    backgroundColor: '#F9FAF7',
+    borderColor: Colors.light.border,
   },
   modeCardLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+    flex: 1,
+    paddingRight: 8,
   },
   modeIconWrap: {
     width: 38,
@@ -563,12 +708,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   modeIconWrapSelected: {
-    backgroundColor: '#1E293B',
+    backgroundColor: '#1C1E1A',
   },
   modeIconWrapUnselected: {
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: Colors.light.border,
   },
   modeCardTitle: {
     fontSize: 15,
@@ -580,8 +725,11 @@ const styles = StyleSheet.create({
   },
   modeCardDesc: {
     fontSize: 12,
-    color: '#94A3B8',
+    color: '#5A5D54',
     marginTop: 2,
+  },
+  modeCardDescSelected: {
+    color: '#D1D5DB',
   },
   checkCircle: {
     width: 24,
@@ -594,12 +742,18 @@ const styles = StyleSheet.create({
 
   /* Footer */
   footer: {
-    paddingTop: 16,
-    paddingBottom: 8,
+    paddingTop: 14,
+    paddingBottom: 6,
+    borderTopWidth: 1,
+    borderTopColor: Colors.light.border,
+    backgroundColor: Colors.light.card,
+  },
+  primaryButtonDisabled: {
+    opacity: 0.65,
   },
   primaryButton: {
     width: '100%',
-    height: 52,
+    minHeight: 52,
     backgroundColor: '#B8F23E',
     borderRadius: Radius.full,
     flexDirection: 'row',
@@ -608,6 +762,13 @@ const styles = StyleSheet.create({
     gap: 8,
     borderWidth: 0,
     borderColor: 'transparent',
+    ...Platform.select({ web: { cursor: 'pointer' } as any, default: {} }),
+  },
+  primaryButtonPressed: {
+    opacity: 0.88,
+  },
+  pressedSoft: {
+    opacity: 0.8,
   },
   primaryButtonText: {
     fontSize: 16,
@@ -615,4 +776,13 @@ const styles = StyleSheet.create({
     color: '#121212',
     letterSpacing: -0.2,
   },
+  webFocusRing: Platform.select({
+    web: {
+      outlineWidth: 2,
+      outlineColor: '#121212',
+      outlineStyle: 'solid',
+      outlineOffset: 2,
+    } as any,
+    default: {},
+  }),
 });

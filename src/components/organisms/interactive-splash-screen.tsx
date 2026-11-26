@@ -12,9 +12,11 @@ import Animated, {
   withTiming,
   withSpring,
   runOnJS,
+  useReducedMotion,
   Easing,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
+import { Colors } from '@/constants/theme';
 
 interface Props {
   onFinish?: () => void;
@@ -37,6 +39,7 @@ export function InteractiveSplashScreen({
   minDurationMs = 650,
   isReady = true,
 }: Props) {
+  const prefersReducedMotion = useReducedMotion();
   const hasFinishedRef = useRef(false);
   const [minTimeElapsed, setMinTimeElapsed] = useState(false);
 
@@ -49,9 +52,9 @@ export function InteractiveSplashScreen({
 
   // Animated values
   const containerOpacity = useSharedValue(1);
-  const logoScale = useSharedValue(0.94);
-  const logoOpacity = useSharedValue(0);
-  const dotScale = useSharedValue(0);
+  const logoScale = useSharedValue(prefersReducedMotion ? 1 : 0.94);
+  const logoOpacity = useSharedValue(prefersReducedMotion ? 1 : 0);
+  const dotScale = useSharedValue(prefersReducedMotion ? 1 : 0);
 
   const handleComplete = useCallback(() => {
     if (hasFinishedRef.current) return;
@@ -62,6 +65,10 @@ export function InteractiveSplashScreen({
   }, [onFinish]);
 
   const triggerExit = useCallback(() => {
+    if (prefersReducedMotion) {
+      handleComplete();
+      return;
+    }
     containerOpacity.value = withTiming(
       0,
       {
@@ -74,7 +81,7 @@ export function InteractiveSplashScreen({
         }
       }
     );
-  }, [containerOpacity, handleComplete]);
+  }, [containerOpacity, handleComplete, prefersReducedMotion]);
 
   const handleTapToSkip = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
@@ -82,6 +89,13 @@ export function InteractiveSplashScreen({
   };
 
   useEffect(() => {
+    if (prefersReducedMotion) {
+      logoOpacity.value = 1;
+      logoScale.value = 1;
+      dotScale.value = 1;
+      return;
+    }
+
     // 1. Entrance animation (immediate spring pop)
     logoOpacity.value = withTiming(1, { duration: 200, easing: Easing.out(Easing.quad) });
     logoScale.value = withSpring(1, { damping: 16, stiffness: 160 });
@@ -94,7 +108,7 @@ export function InteractiveSplashScreen({
     return () => {
       clearTimeout(dotTimer);
     };
-  }, [dotScale, logoOpacity, logoScale]);
+  }, [dotScale, logoOpacity, logoScale, prefersReducedMotion]);
 
   // 3. Minimum duration timer
   useEffect(() => {
@@ -130,7 +144,10 @@ export function InteractiveSplashScreen({
   return (
     <Animated.View style={[styles.overlay, containerAnimatedStyle]}>
       <Pressable
-        style={styles.pressableArea}
+        style={({ focused }: any) => [
+          styles.pressableArea,
+          Platform.OS === 'web' && focused && styles.webFocusRing,
+        ]}
         onPress={handleTapToSkip}
         accessibilityRole="button"
         accessibilityLabel="JobHub Splash Screen. Tap anywhere to skip."
@@ -169,6 +186,7 @@ const styles = StyleSheet.create({
     width: '100%',
     justifyContent: 'center',
     alignItems: 'center',
+    ...Platform.select({ web: { cursor: 'pointer' } as any, default: {} }),
   },
   content: {
     flex: 1,
@@ -208,8 +226,17 @@ const styles = StyleSheet.create({
   },
   hintText: {
     fontSize: 12,
-    fontWeight: '500',
-    color: '#A0A0A0',
+    fontWeight: '600',
+    color: Colors.light.textMuted,
     letterSpacing: 0.3,
   },
+  webFocusRing: Platform.select({
+    web: {
+      outlineWidth: 2,
+      outlineColor: '#121212',
+      outlineStyle: 'solid',
+      outlineOffset: -4,
+    } as any,
+    default: {},
+  }),
 });

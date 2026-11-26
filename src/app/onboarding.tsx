@@ -3,15 +3,16 @@ import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
+  Pressable,
+  ScrollView,
   useWindowDimensions,
   Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { ArrowRight } from 'lucide-react-native';
-import { Radius } from '@/constants/theme';
+import { ArrowLeft, ArrowRight } from 'lucide-react-native';
+import { Colors, Radius } from '@/constants/theme';
 import { useOnboardingStore } from '@/modules/onboarding';
 import { OnboardingJobsIllustration } from '@/components/atoms/onboarding-jobs-illustration';
 import { OnboardingHunterIllustration } from '@/components/atoms/onboarding-hunter-illustration';
@@ -26,8 +27,12 @@ interface SlideItem {
 }
 
 export default function OnboardingScreen() {
-  const { width } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
   const isDesktop = width >= 768;
+  const illustWidth = isDesktop ? 340 : Math.min(300, Math.max(200, width - 96));
+  const illustHeight = isDesktop
+    ? Math.min(230, Math.max(160, Math.round(height * 0.28)))
+    : Math.min(210, Math.max(148, Math.round(height * 0.26)));
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const completeWalkthrough = useOnboardingStore((state) => state.completeWalkthrough);
 
@@ -40,8 +45,8 @@ export default function OnboardingScreen() {
         'Bypass spam and agency recruiters. Direct access to high-signal professional positions matching your experience and goals.',
       illustration: (
         <OnboardingJobsIllustration
-          width={isDesktop ? 360 : 320}
-          height={isDesktop ? 250 : 225}
+          width={illustWidth}
+          height={illustHeight}
         />
       ),
     },
@@ -53,8 +58,8 @@ export default function OnboardingScreen() {
         'The agent monitors market openings around the clock, tracks application pipelines, and prepares you for upcoming interviews.',
       illustration: (
         <OnboardingHunterIllustration
-          width={isDesktop ? 360 : 320}
-          height={isDesktop ? 250 : 225}
+          width={illustWidth}
+          height={illustHeight}
         />
       ),
     },
@@ -66,8 +71,8 @@ export default function OnboardingScreen() {
         'Generate clean, ATS-compliant CVs tailored for each opportunity in one tap with instant Markdown and PDF export.',
       illustration: (
         <OnboardingCvIllustration
-          width={isDesktop ? 360 : 320}
-          height={isDesktop ? 250 : 225}
+          width={illustWidth}
+          height={illustHeight}
         />
       ),
     },
@@ -81,6 +86,16 @@ export default function OnboardingScreen() {
       completeWalkthrough();
       router.replace('/register');
     }
+  };
+
+  const handleBack = () => {
+    Haptics.selectionAsync().catch(() => {});
+    setCurrentSlideIndex((prev) => Math.max(0, prev - 1));
+  };
+
+  const handleJumpToSlide = (index: number) => {
+    Haptics.selectionAsync().catch(() => {});
+    setCurrentSlideIndex(index);
   };
 
   const handleSkip = () => {
@@ -104,24 +119,47 @@ export default function OnboardingScreen() {
         <View style={[styles.card, isDesktop && styles.desktopCard]}>
           {/* Header Bar */}
           <View style={styles.header}>
-            <View style={styles.brandRow}>
-              <Text style={styles.brandText}>jobhub</Text>
-              <View style={styles.brandDot} />
+            <View style={styles.headerLeft}>
+              {currentSlideIndex > 0 ? (
+                <Pressable
+                  onPress={handleBack}
+                  style={({ pressed, focused }: any) => [
+                    styles.backButton,
+                    Platform.OS === 'web' && focused && styles.webFocusRing,
+                    pressed && styles.buttonPressed,
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Previous slide">
+                  <ArrowLeft size={18} color="#121212" />
+                </Pressable>
+              ) : null}
+              <View style={styles.brandRow}>
+                <Text style={styles.brandText}>jobhub</Text>
+                <View style={styles.brandDot} />
+              </View>
             </View>
-            <TouchableOpacity
+            <Pressable
               onPress={handleSkip}
-              style={styles.skipButton}
-              activeOpacity={0.7}
+              style={({ pressed, focused }: any) => [
+                styles.skipButton,
+                Platform.OS === 'web' && focused && styles.webFocusRing,
+                pressed && styles.buttonPressed,
+              ]}
               accessibilityRole="button"
               accessibilityLabel="Skip onboarding walkthrough">
               <Text style={styles.skipText}>Skip</Text>
-            </TouchableOpacity>
+            </Pressable>
           </View>
 
           {/* Slide Content Area */}
-          <View style={styles.contentArea}>
+          <ScrollView
+            style={styles.scrollArea}
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}>
             {/* Vector Illustration */}
-            <View style={styles.illustrationWrap}>{currentSlide.illustration}</View>
+            <View style={styles.illustrationFrame}>
+              <View style={styles.illustrationWrap}>{currentSlide.illustration}</View>
+            </View>
 
             {/* Slide Text Group */}
             <View style={styles.textGroup}>
@@ -131,54 +169,68 @@ export default function OnboardingScreen() {
               <Text style={styles.title}>{currentSlide.title}</Text>
               <Text style={styles.subtitle}>{currentSlide.subtitle}</Text>
             </View>
-          </View>
+          </ScrollView>
 
           {/* Bottom Action Footer */}
           <View style={styles.footer}>
-            {/* Pagination Pill Dots */}
-            <View style={styles.paginationRow}>
-              {slides.map((_, idx) => {
+            {/* Interactive Pagination Dots */}
+            <View style={styles.paginationRow} accessibilityRole="tablist">
+              {slides.map((slide, idx) => {
                 const isActive = idx === currentSlideIndex;
                 return (
-                  <View
-                    key={idx}
-                    style={[
-                      styles.dot,
-                      isActive ? styles.dotActive : styles.dotInactive,
+                  <Pressable
+                    key={slide.id}
+                    onPress={() => handleJumpToSlide(idx)}
+                    style={({ pressed, focused }: any) => [
+                      styles.dotButton,
+                      Platform.OS === 'web' && focused && styles.webFocusRing,
+                      pressed && styles.buttonPressed,
                     ]}
-                  />
+                    accessibilityRole="tab"
+                    accessibilityLabel={`Slide ${idx + 1} of ${slides.length}: ${slide.tag}`}
+                    accessibilityState={{ selected: isActive }}>
+                    <View
+                      style={[
+                        styles.dot,
+                        isActive ? styles.dotActive : styles.dotInactive,
+                      ]}
+                    />
+                  </Pressable>
                 );
               })}
             </View>
 
-            {/* Primary Action Button (Solid Lime, Zero Border Anti-Slop) */}
-            <TouchableOpacity
+            {/* Primary Action Button */}
+            <Pressable
               onPress={handleNext}
-              style={[
+              style={({ pressed, focused }: any) => [
                 styles.primaryButton,
-                Platform.OS === 'web' && ({ outline: 'none' } as any),
+                Platform.OS === 'web' && focused && styles.webFocusRing,
+                pressed && styles.primaryButtonPressed,
               ]}
-              activeOpacity={0.88}
               accessibilityRole="button"
-              accessibilityLabel={isLastSlide ? 'Get started' : 'Continue to next slide'}>
+              accessibilityLabel={isLastSlide ? 'Continue to sign up' : 'Continue to next slide'}>
               <Text style={styles.primaryButtonText}>
-                {isLastSlide ? 'Get started' : 'Continue'}
+                {isLastSlide ? 'Continue to sign up' : 'Continue'}
               </Text>
               <ArrowRight size={18} color="#121212" strokeWidth={2.4} />
-            </TouchableOpacity>
+            </Pressable>
 
             {/* Secondary Sign In Link */}
-            <TouchableOpacity
+            <Pressable
               onPress={handleSignIn}
-              style={styles.signInButton}
-              activeOpacity={0.7}
+              style={({ pressed, focused }: any) => [
+                styles.signInButton,
+                Platform.OS === 'web' && focused && styles.webFocusRing,
+                pressed && styles.buttonPressed,
+              ]}
               accessibilityRole="button"
               accessibilityLabel="Sign in with existing account">
               <Text style={styles.signInText}>
                 Already have an account?{' '}
                 <Text style={styles.signInTextBold}>Sign in</Text>
               </Text>
-            </TouchableOpacity>
+            </Pressable>
           </View>
         </View>
       </View>
@@ -189,17 +241,18 @@ export default function OnboardingScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.light.background,
   },
   root: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.light.background,
     alignItems: 'center',
     justifyContent: 'center',
   },
   card: {
     flex: 1,
     width: '100%',
+    backgroundColor: Colors.light.card,
     paddingHorizontal: 24,
     paddingVertical: 16,
     justifyContent: 'space-between',
@@ -207,10 +260,10 @@ const styles = StyleSheet.create({
   desktopCard: {
     maxWidth: 520,
     maxHeight: 740,
-    borderRadius: 24,
+    borderRadius: Radius.lg,
     borderWidth: 1.5,
-    borderColor: '#E2E6DC',
-    paddingVertical: 32,
+    borderColor: Colors.light.border,
+    paddingVertical: 28,
     paddingHorizontal: 36,
   },
 
@@ -219,7 +272,24 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: 8,
+    paddingTop: 4,
+    paddingBottom: 8,
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  backButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: Colors.light.background,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...Platform.select({ web: { cursor: 'pointer' } as any, default: {} }),
   },
   brandRow: {
     flexDirection: 'row',
@@ -240,42 +310,64 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   skipButton: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
+    minHeight: 44,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: Radius.full,
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...Platform.select({ web: { cursor: 'pointer' } as any, default: {} }),
   },
   skipText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#64748B',
+    color: '#5A5D54',
   },
 
   /* Content */
-  contentArea: {
+  scrollArea: {
     flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 16,
+    paddingVertical: 12,
+  },
+  illustrationFrame: {
+    backgroundColor: Colors.light.background,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    borderRadius: Radius.lg,
+    padding: 14,
+    marginBottom: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   illustrationWrap: {
+    backgroundColor: Colors.light.card,
+    borderRadius: Radius.md,
+    overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 24,
   },
   textGroup: {
     alignItems: 'center',
     paddingHorizontal: 12,
   },
   tagBadge: {
-    backgroundColor: '#F0F5E9',
+    backgroundColor: '#EFFCD3',
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 6,
+    borderRadius: Radius.sm,
+    borderWidth: 1,
+    borderColor: '#B8F23E',
     marginBottom: 10,
   },
   tagText: {
     fontSize: 11,
     fontWeight: '800',
-    color: '#3F6212',
+    color: '#2F4F00',
     letterSpacing: 0.8,
   },
   title: {
@@ -289,7 +381,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 14,
-    color: '#64748B',
+    color: '#5A5D54',
     textAlign: 'center',
     lineHeight: 21,
     maxWidth: 380,
@@ -297,15 +389,25 @@ const styles = StyleSheet.create({
 
   /* Footer */
   footer: {
-    paddingBottom: 16,
+    paddingTop: 12,
+    paddingBottom: 8,
     alignItems: 'center',
   },
   paginationRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
-    marginBottom: 20,
+    gap: 4,
+    marginBottom: 14,
+  },
+  dotButton: {
+    minWidth: 36,
+    minHeight: 44,
+    paddingHorizontal: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: Radius.full,
+    ...Platform.select({ web: { cursor: 'pointer' } as any, default: {} }),
   },
   dot: {
     height: 7,
@@ -317,11 +419,11 @@ const styles = StyleSheet.create({
   },
   dotInactive: {
     width: 7,
-    backgroundColor: '#E2E6DC',
+    backgroundColor: Colors.light.border,
   },
   primaryButton: {
     width: '100%',
-    height: 52,
+    minHeight: 52,
     backgroundColor: '#B8F23E',
     borderRadius: Radius.full,
     flexDirection: 'row',
@@ -330,7 +432,11 @@ const styles = StyleSheet.create({
     gap: 8,
     borderWidth: 0,
     borderColor: 'transparent',
-    marginBottom: 12,
+    marginBottom: 8,
+    ...Platform.select({ web: { cursor: 'pointer' } as any, default: {} }),
+  },
+  primaryButtonPressed: {
+    opacity: 0.88,
   },
   primaryButtonText: {
     fontSize: 16,
@@ -339,15 +445,33 @@ const styles = StyleSheet.create({
     letterSpacing: -0.2,
   },
   signInButton: {
-    paddingVertical: 8,
+    minHeight: 44,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: Radius.full,
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...Platform.select({ web: { cursor: 'pointer' } as any, default: {} }),
+  },
+  buttonPressed: {
+    opacity: 0.72,
   },
   signInText: {
     fontSize: 14,
-    color: '#64748B',
+    color: '#5A5D54',
   },
   signInTextBold: {
     fontWeight: '700',
     color: '#121212',
     textDecorationLine: 'underline',
   },
+  webFocusRing: Platform.select({
+    web: {
+      outlineWidth: 2,
+      outlineColor: '#121212',
+      outlineStyle: 'solid',
+      outlineOffset: 2,
+    } as any,
+    default: {},
+  }),
 });
