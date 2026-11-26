@@ -1,7 +1,7 @@
 import React from 'react';
-import { View, StyleSheet, Pressable } from 'react-native';
+import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import { Bot, User as UserIcon } from 'lucide-react-native';
+import { Bot } from 'lucide-react-native';
 import { HunterMessage } from '../hunter.types';
 import { Job } from '@/modules/jobs/jobs.types';
 import { HunterStatusTicker } from './hunter-status-ticker';
@@ -40,7 +40,7 @@ export function HunterMessageBubble({
       ]}>
       {/* Agent Avatar Icon */}
       {!isUser ? (
-        <View style={styles.agentAvatarBox}>
+        <View style={styles.agentAvatarBox} accessibilityElementsHidden>
           <Bot size={15} color="#121212" />
         </View>
       ) : null}
@@ -94,7 +94,7 @@ export function HunterMessageBubble({
           </View>
         ) : null}
 
-        {/* Suggested Quick Prompt Pills Attached to Message */}
+        {/* Suggested Quick Prompt Chips Attached to Message */}
         {!isUser && message.suggestedPrompts && message.suggestedPrompts.length > 0 ? (
           <View style={styles.promptsContainer}>
             <Label style={styles.promptsHeader}>SUGGESTED NEXT STEPS</Label>
@@ -103,9 +103,12 @@ export function HunterMessageBubble({
                 <Pressable
                   key={prompt}
                   onPress={() => handlePromptPress(prompt)}
-                  style={({ pressed }) => [
+                  style={state => [
                     styles.promptPill,
-                    pressed && styles.promptPillPressed,
+                    state.pressed && styles.promptPillPressed,
+                    Platform.OS === 'web' && (state as { focused?: boolean }).focused
+                      ? styles.webFocusRing
+                      : null,
                   ]}
                   accessibilityRole="button"
                   accessibilityLabel={prompt}>
@@ -135,12 +138,12 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
   },
   agentAvatarBox: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 30,
+    height: 30,
+    borderRadius: Radius.full,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#E8ECDF',
+    borderColor: Colors.light.border,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 4,
@@ -158,7 +161,7 @@ const styles = StyleSheet.create({
   bubbleCard: {
     paddingHorizontal: 14,
     paddingVertical: 10,
-    borderRadius: 18,
+    borderRadius: 16,
   },
   bubbleCardUser: {
     backgroundColor: '#121212',
@@ -167,13 +170,8 @@ const styles = StyleSheet.create({
   bubbleCardAgent: {
     backgroundColor: '#FFFFFF',
     borderWidth: 1.5,
-    borderColor: '#E8ECDF',
+    borderColor: Colors.light.border,
     borderBottomLeftRadius: 4,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.03,
-    shadowRadius: 4,
-    elevation: 1,
   },
   messageText: {
     fontSize: 14,
@@ -194,7 +192,7 @@ const styles = StyleSheet.create({
     color: '#A0A398',
   },
   timestampAgent: {
-    color: '#8E9285',
+    color: '#5A5D54',
   },
   attachmentContainer: {
     width: '100%',
@@ -207,7 +205,7 @@ const styles = StyleSheet.create({
   },
   promptsHeader: {
     fontSize: 10,
-    letterSpacing: 0.8,
+    letterSpacing: 0.6,
     color: '#5A5D54',
     fontWeight: '700',
   },
@@ -215,20 +213,30 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   promptPill: {
+    minHeight: 44,
+    justifyContent: 'center',
     backgroundColor: '#FFFFFF',
-    borderRadius: Radius.pill,
+    borderRadius: Radius.sm,
     borderWidth: 1,
-    borderColor: '#D8DEC9',
+    borderColor: Colors.light.border,
     paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingVertical: 10,
+    ...(Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : null),
   },
   promptPillPressed: {
     backgroundColor: '#EFF3E8',
     borderColor: '#B8F23E',
   },
   promptPillText: {
-    fontSize: 12,
+    fontSize: 12.5,
+    lineHeight: 18,
     color: '#121212',
-    fontWeight: '500',
+    fontWeight: '600',
   },
+  webFocusRing: {
+    outlineWidth: 2,
+    outlineStyle: 'solid',
+    outlineColor: '#121212',
+    outlineOffset: 2,
+  } as any,
 });

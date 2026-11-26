@@ -1,17 +1,18 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   Modal,
-  View,
+  Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
-  Pressable,
-  TouchableWithoutFeedback,
+  View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
-import { Plus, X, Trash2, MessageSquare } from 'lucide-react-native';
+import { MessageSquare, Plus, Trash2, X } from 'lucide-react-native';
 import { HunterSession } from '../hunter.types';
-import { Heading, Body } from '@/components/atoms/typography';
-import { Colors } from '@/constants/theme';
+import { Body, Heading } from '@/components/atoms/typography';
+import { Colors, Radius } from '@/constants/theme';
 
 interface HunterSessionDrawerProps {
   visible: boolean;
@@ -32,6 +33,20 @@ export function HunterSessionDrawer({
   onCreateNewSession,
   onDeleteSession,
 }: HunterSessionDrawerProps) {
+  const insets = useSafeAreaInsets();
+
+  useEffect(() => {
+    if (Platform.OS !== 'web' || !visible) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown, true);
+    return () => window.removeEventListener('keydown', handleKeyDown, true);
+  }, [onClose, visible]);
+
   const handleSelect = (id: string) => {
     Haptics.selectionAsync().catch(() => {});
     onSelectSession(id);
@@ -45,7 +60,7 @@ export function HunterSessionDrawer({
   };
 
   const handleDelete = (id: string, e: any) => {
-    e.stopPropagation?.();
+    e?.stopPropagation?.();
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     onDeleteSession(id);
   };
@@ -57,21 +72,30 @@ export function HunterSessionDrawer({
       animationType="fade"
       onRequestClose={onClose}>
       <View style={styles.modalOverlay}>
-        <TouchableWithoutFeedback onPress={onClose}>
-          <View style={styles.backdrop} />
-        </TouchableWithoutFeedback>
+        <Pressable
+          onPress={onClose}
+          style={styles.backdrop}
+          accessibilityRole="button"
+          accessibilityLabel="Close conversation history drawer"
+        />
 
-        {/* Clean, Understated Side Drawer Panel */}
-        <View style={styles.drawerPanel}>
+        {/* Side Drawer Panel */}
+        <View
+          style={[
+            styles.drawerPanel,
+            { paddingTop: Math.max(insets.top + 12, 24) },
+          ]}>
           {/* Top Bar */}
           <View style={styles.drawerHeader}>
             <Heading style={styles.headerTitle}>Chats</Heading>
             <Pressable
               onPress={onClose}
-              hitSlop={8}
-              style={({ pressed }) => [
+              style={state => [
                 styles.closeButton,
-                pressed && styles.buttonPressed,
+                state.pressed && styles.buttonPressed,
+                Platform.OS === 'web' && (state as { focused?: boolean }).focused
+                  ? styles.webFocusRing
+                  : null,
               ]}
               accessibilityRole="button"
               accessibilityLabel="Close drawer">
@@ -82,9 +106,12 @@ export function HunterSessionDrawer({
           {/* New Chat Row */}
           <Pressable
             onPress={handleCreate}
-            style={({ pressed }) => [
+            style={state => [
               styles.newChatRow,
-              pressed && styles.buttonPressed,
+              state.pressed && styles.buttonPressed,
+              Platform.OS === 'web' && (state as { focused?: boolean }).focused
+                ? styles.webFocusRing
+                : null,
             ]}
             accessibilityRole="button"
             accessibilityLabel="Start a new chat">
@@ -92,7 +119,7 @@ export function HunterSessionDrawer({
             <Body style={styles.newChatText}>New chat</Body>
           </Pressable>
 
-          {/* Simple, Quiet Text List */}
+          {/* Conversation Sessions List */}
           <ScrollView
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.sessionListContent}>
@@ -108,12 +135,19 @@ export function HunterSessionDrawer({
                   ]}>
                   <Pressable
                     onPress={() => handleSelect(session.id)}
-                    style={styles.sessionMainPressable}
+                    style={state => [
+                      styles.sessionMainPressable,
+                      state.pressed && styles.pressedFade,
+                      Platform.OS === 'web' && (state as { focused?: boolean }).focused
+                        ? styles.webFocusRing
+                        : null,
+                    ]}
                     accessibilityRole="button"
+                    accessibilityState={{ selected: isActive }}
                     accessibilityLabel={session.title}>
                     <MessageSquare
                       size={15}
-                      color={isActive ? '#121212' : '#8A8D84'}
+                      color={isActive ? '#121212' : '#5A5D54'}
                     />
                     <Body
                       style={[
@@ -125,14 +159,18 @@ export function HunterSessionDrawer({
                     </Body>
                   </Pressable>
 
-                  {/* Delete Button */}
                   <Pressable
                     onPress={e => handleDelete(session.id, e)}
-                    hitSlop={8}
-                    style={styles.deleteButton}
+                    style={state => [
+                      styles.deleteButton,
+                      state.pressed && styles.buttonPressed,
+                      Platform.OS === 'web' && (state as { focused?: boolean }).focused
+                        ? styles.webFocusRing
+                        : null,
+                    ]}
                     accessibilityRole="button"
                     accessibilityLabel={`Delete ${session.title}`}>
-                    <Trash2 size={13} color="#8A8D84" />
+                    <Trash2 size={15} color="#5A5D54" />
                   </Pressable>
                 </View>
               );
@@ -151,45 +189,46 @@ const styles = StyleSheet.create({
   },
   backdrop: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(18, 18, 18, 0.4)',
+    backgroundColor: 'rgba(18, 18, 18, 0.45)',
   },
   drawerPanel: {
-    width: 290,
-    maxWidth: '82%',
+    width: 300,
+    maxWidth: '84%',
     backgroundColor: '#FFFFFF',
-    borderRightWidth: 1,
-    borderRightColor: '#E8ECDF',
-    paddingTop: 48,
+    borderRightWidth: 1.5,
+    borderRightColor: Colors.light.border,
     paddingBottom: 24,
-    shadowColor: '#000000',
-    shadowOffset: { width: 4, height: 0 },
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
-    elevation: 8,
   },
   drawerHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingBottom: 14,
+    paddingHorizontal: 16,
+    paddingBottom: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#EFF3E8',
   },
   headerTitle: {
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: '800',
     color: '#121212',
   },
   closeButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
+    width: 44,
+    height: 44,
+    borderRadius: Radius.full,
+    backgroundColor: '#F4F6F0',
+    borderWidth: 1,
+    borderColor: Colors.light.border,
     alignItems: 'center',
     justifyContent: 'center',
+    ...(Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : null),
   },
   buttonPressed: {
-    backgroundColor: '#F4F6F0',
+    backgroundColor: '#EAEFE2',
+  },
+  pressedFade: {
+    opacity: 0.78,
   },
   newChatRow: {
     flexDirection: 'row',
@@ -199,28 +238,31 @@ const styles = StyleSheet.create({
     marginTop: 12,
     marginBottom: 8,
     paddingHorizontal: 14,
-    height: 42,
-    borderRadius: 10,
+    minHeight: 44,
+    borderRadius: Radius.sm,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
     backgroundColor: '#F4F6F0',
+    ...(Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : null),
   },
   newChatText: {
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: '700',
     color: '#121212',
   },
   sessionListContent: {
     paddingHorizontal: 12,
     paddingTop: 4,
     paddingBottom: 24,
-    gap: 2,
+    gap: 4,
   },
   sessionRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    height: 40,
-    borderRadius: 8,
-    paddingHorizontal: 10,
+    minHeight: 44,
+    borderRadius: Radius.sm,
+    paddingLeft: 10,
   },
   sessionRowActive: {
     backgroundColor: '#EFF3E8',
@@ -230,7 +272,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
     flex: 1,
-    height: '100%',
+    minHeight: 44,
+    borderRadius: Radius.sm,
+    paddingRight: 6,
+    ...(Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : null),
   },
   sessionText: {
     fontSize: 13,
@@ -239,10 +284,20 @@ const styles = StyleSheet.create({
   },
   sessionTextActive: {
     color: '#121212',
-    fontWeight: '600',
+    fontWeight: '700',
   },
   deleteButton: {
-    padding: 6,
-    opacity: 0.7,
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: Radius.sm,
+    ...(Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : null),
   },
+  webFocusRing: {
+    outlineWidth: 2,
+    outlineStyle: 'solid',
+    outlineColor: '#121212',
+    outlineOffset: 1,
+  } as any,
 });

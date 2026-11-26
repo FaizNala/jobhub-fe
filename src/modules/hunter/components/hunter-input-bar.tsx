@@ -1,21 +1,22 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
-  View,
-  TextInput,
-  StyleSheet,
+  ActivityIndicator,
+  Platform,
   Pressable,
   ScrollView,
-  Platform,
+  StyleSheet,
+  TextInput,
+  View,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import { ArrowUp, Loader2, Sparkles } from 'lucide-react-native';
-import { Body, Label } from '@/components/atoms/typography';
+import { ArrowUp } from 'lucide-react-native';
+import { Body } from '@/components/atoms/typography';
 import { Colors, Radius } from '@/constants/theme';
 
 interface HunterInputBarProps {
   value: string;
   onChangeText: (text: string) => void;
-  onSend: (text: string) => void;
+  onSend: (text: string) => Promise<boolean> | boolean;
   isHunting: boolean;
   suggestedPrompts?: string[];
   onSelectPrompt?: (prompt: string) => void;
@@ -31,12 +32,15 @@ export function HunterInputBar({
 }: HunterInputBarProps) {
   const canSend = value.trim().length > 0 && !isHunting;
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!canSend) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     const textToSend = value;
     onChangeText('');
-    onSend(textToSend);
+    const ok = await onSend(textToSend);
+    if (ok === false) {
+      onChangeText(textToSend);
+    }
   };
 
   const handlePromptPress = (prompt: string) => {
@@ -45,6 +49,14 @@ export function HunterInputBar({
       onSelectPrompt(prompt);
     } else {
       onChangeText(prompt);
+    }
+  };
+
+  const handleKeyPress = (e: any) => {
+    if (Platform.OS !== 'web') return;
+    if (e?.nativeEvent?.key === 'Enter' && !e?.nativeEvent?.shiftKey) {
+      e.preventDefault?.();
+      handleSend();
     }
   };
 
@@ -60,9 +72,12 @@ export function HunterInputBar({
             <Pressable
               key={prompt}
               onPress={() => handlePromptPress(prompt)}
-              style={({ pressed }) => [
+              style={state => [
                 styles.quickPill,
-                pressed && styles.quickPillPressed,
+                state.pressed && styles.quickPillPressed,
+                Platform.OS === 'web' && (state as { focused?: boolean }).focused
+                  ? styles.webFocusRing
+                  : null,
               ]}
               accessibilityRole="button"
               accessibilityLabel={`Select prompt: ${prompt}`}>
@@ -79,12 +94,13 @@ export function HunterInputBar({
         <TextInput
           value={value}
           onChangeText={onChangeText}
+          onKeyPress={handleKeyPress}
           placeholder={
             isHunting
-              ? 'Agent is scouting jobs across connectors...'
+              ? 'Agent is scouting boards and curated feeds...'
               : 'Search roles, benchmark compensation, or audit CV...'
           }
-          placeholderTextColor="#8E9285"
+          placeholderTextColor="#5A5D54"
           multiline
           maxLength={500}
           editable={!isHunting}
@@ -92,23 +108,27 @@ export function HunterInputBar({
           accessibilityLabel="Message input for Career Agent"
         />
 
-        {/* Circular Send Action Button */}
+        {/* Circular Send Action Button (>= 44x44) */}
         <Pressable
           onPress={handleSend}
-          disabled={!canSend}
-          style={({ pressed }) => [
+          disabled={!canSend && !isHunting}
+          style={state => [
             styles.sendButton,
             canSend ? styles.sendButtonActive : styles.sendButtonDisabled,
-            pressed && canSend && styles.sendButtonPressed,
+            state.pressed && canSend && styles.sendButtonPressed,
+            Platform.OS === 'web' && (state as { focused?: boolean }).focused
+              ? styles.webFocusRing
+              : null,
           ]}
           accessibilityRole="button"
+          accessibilityState={{ busy: isHunting, disabled: !canSend }}
           accessibilityLabel="Send message to Hunter Agent">
           {isHunting ? (
-            <Loader2 size={18} color="#121212" />
+            <ActivityIndicator size="small" color="#121212" />
           ) : (
             <ArrowUp
-              size={18}
-              color={canSend ? '#121212' : '#8E9285'}
+              size={19}
+              color={canSend ? '#121212' : '#5A5D54'}
               strokeWidth={2.5}
             />
           )}
@@ -122,7 +142,7 @@ const styles = StyleSheet.create({
   outerContainer: {
     paddingHorizontal: 16,
     paddingTop: 8,
-    paddingBottom: 12,
+    paddingBottom: 10,
     backgroundColor: 'transparent',
     gap: 8,
   },
@@ -131,17 +151,15 @@ const styles = StyleSheet.create({
     paddingBottom: 4,
   },
   quickPill: {
+    minHeight: 44,
+    justifyContent: 'center',
     backgroundColor: '#FFFFFF',
-    borderRadius: Radius.pill,
+    borderRadius: Radius.full,
     borderWidth: 1,
-    borderColor: '#D8DEC9',
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.02,
-    shadowRadius: 2,
-    elevation: 1,
+    borderColor: Colors.light.border,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    ...(Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : null),
   },
   quickPillPressed: {
     backgroundColor: '#EFF3E8',
@@ -150,41 +168,37 @@ const styles = StyleSheet.create({
   quickPillText: {
     fontSize: 12,
     color: '#121212',
-    fontWeight: '500',
+    fontWeight: '600',
   },
   inputCapsule: {
     flexDirection: 'row',
     alignItems: 'flex-end',
+    gap: 8,
     backgroundColor: '#FFFFFF',
-    borderRadius: 24,
+    borderRadius: Radius.lg,
     borderWidth: 1.5,
-    borderColor: '#D8DEC9',
+    borderColor: Colors.light.border,
     paddingLeft: 16,
     paddingRight: 6,
     paddingVertical: 6,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 3,
   },
   textInput: {
     flex: 1,
-    minHeight: 36,
-    maxHeight: 100,
+    minHeight: 40,
+    maxHeight: 108,
     fontSize: 14,
     lineHeight: 20,
     color: '#121212',
-    paddingTop: Platform.OS === 'ios' ? 8 : 4,
-    paddingBottom: Platform.OS === 'ios' ? 8 : 4,
+    paddingTop: Platform.OS === 'ios' ? 9 : 7,
+    paddingBottom: Platform.OS === 'ios' ? 9 : 7,
   },
   sendButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 44,
+    height: 44,
+    borderRadius: Radius.full,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 2,
+    ...(Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : null),
   },
   sendButtonActive: {
     backgroundColor: '#B8F23E',
@@ -194,6 +208,11 @@ const styles = StyleSheet.create({
   },
   sendButtonPressed: {
     opacity: 0.8,
-    transform: [{ scale: 0.95 }],
   },
+  webFocusRing: {
+    outlineWidth: 2,
+    outlineStyle: 'solid',
+    outlineColor: '#121212',
+    outlineOffset: 2,
+  } as any,
 });

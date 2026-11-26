@@ -8,18 +8,20 @@ import {
 } from './hunter.types';
 import { MOCK_JOBS } from '@/constants/mock-jobs';
 
-const DEFAULT_WELCOME_MESSAGE: HunterMessage = {
-  id: 'msg-welcome',
-  role: 'agent',
-  content:
-    'Specify your target role, compensation benchmark, or target companies to scout verified opportunities across public ATS connectors and curated feeds.',
-  timestamp: Date.now() - 3600000,
-  suggestedPrompts: [
-    'Find Remote Senior React Native roles paying >$150k',
-    'Search Staff Mobile Architect positions at Tier-1 companies',
-    'Look for Hybrid UX/UI Design lead jobs in SF',
-  ],
-};
+function createWelcomeMessage(): HunterMessage {
+  return {
+    id: 'msg-welcome',
+    role: 'agent',
+    content:
+      'Specify your target role, compensation benchmark, or target companies to scout verified opportunities across curated boards and ATS feeds.',
+    timestamp: Date.now() - 3600000,
+    suggestedPrompts: [
+      'Find Remote Senior Engineer roles paying >$150k',
+      'Look for Hybrid UX/UI Design Lead jobs',
+      'Search Finance & Strategy Manager openings',
+    ],
+  };
+}
 
 let MOCK_SESSIONS: HunterSession[] = [
   {
@@ -32,7 +34,7 @@ let MOCK_SESSIONS: HunterSession[] = [
   },
   {
     id: 'sess-2',
-    title: 'Staff Solutions Architect',
+    title: 'Solutions Architect (Tier-1)',
     createdAt: Date.now() - 172800000,
     updatedAt: Date.now() - 86400000,
     lastSnippet: 'Scouted 1 leadership opening at Amazon.',
@@ -42,7 +44,7 @@ let MOCK_SESSIONS: HunterSession[] = [
 
 let MOCK_SESSION_MESSAGES: Record<string, HunterMessage[]> = {
   'sess-1': [
-    DEFAULT_WELCOME_MESSAGE,
+    createWelcomeMessage(),
     {
       id: 'msg-s1-1',
       role: 'user',
@@ -53,64 +55,64 @@ let MOCK_SESSION_MESSAGES: Record<string, HunterMessage[]> = {
       id: 'msg-s1-2',
       role: 'agent',
       content:
-        'I scanned official Greenhouse & Lever boards alongside public feeds. Found 2 verified roles matching your criteria.',
+        'I scanned curated ATS boards and verified employer feeds. Found 2 matching roles for your criteria.',
       timestamp: Date.now() - 3400000,
       steps: [
         {
           id: 'step-1',
-          label: 'Connected to Greenhouse and Lever public endpoints',
+          label: 'Connected to Greenhouse and Lever ATS feeds',
           status: 'completed',
           timestamp: Date.now() - 3480000,
         },
         {
           id: 'step-2',
-          label: 'Extracted listings matching keyword specifications',
+          label: 'Extracted listings matching role & keyword criteria',
           status: 'completed',
           timestamp: Date.now() - 3450000,
         },
         {
           id: 'step-3',
-          label: 'Verified compensation and remote eligibility',
+          label: 'Verified compensation and workplace arrangement',
           status: 'completed',
           timestamp: Date.now() - 3400000,
         },
       ],
-      jobs: [MOCK_JOBS[0], MOCK_JOBS[1]],
+      jobs: MOCK_JOBS.slice(0, 2),
       suggestedPrompts: [
-        'Add Uber role to my Pipeline',
-        'Optimize my CV for Amazon Solutions Architect',
+        'Compare Uber compensation with market benchmarks',
+        'Search more Hybrid roles like Senior React Native Engineer',
       ],
     },
   ],
   'sess-2': [
-    DEFAULT_WELCOME_MESSAGE,
+    createWelcomeMessage(),
     {
       id: 'msg-s2-1',
       role: 'user',
-      content: 'Search Staff Mobile Architect positions at Tier-1 companies',
+      content: 'Search Staff Solutions Architect positions at Tier-1 companies',
       timestamp: Date.now() - 86000000,
     },
     {
       id: 'msg-s2-2',
       role: 'agent',
-      content: 'Found 1 verified Staff Architecture role at Amazon.',
+      content: 'Found 1 verified Solutions Architect role at Amazon.',
       timestamp: Date.now() - 85900000,
       steps: [
         {
           id: 's2-step-1',
-          label: 'Scraped tier-1 job listings via public connectors',
+          label: 'Scanned tier-1 employer boards and ATS feeds',
           status: 'completed',
           timestamp: Date.now() - 85950000,
         },
         {
           id: 's2-step-2',
-          label: 'Validated staff-level engineering leadership criteria',
+          label: 'Validated leadership & scope criteria',
           status: 'completed',
           timestamp: Date.now() - 85900000,
         },
       ],
-      jobs: [MOCK_JOBS[1]],
-      suggestedPrompts: ['Compare salary against Bay Area average'],
+      jobs: MOCK_JOBS[1] ? [MOCK_JOBS[1]] : MOCK_JOBS.slice(0, 1),
+      suggestedPrompts: ['Compare salary against Bay Area market average'],
     },
   ],
 };
@@ -122,7 +124,7 @@ export const hunterService = {
   getSessions: async (): Promise<ApiResponse<HunterSession[]>> => {
     if (apiClient.getMockMode()) {
       await new Promise(r => setTimeout(r, 40));
-      return { success: true, status: 200, data: [...MOCK_SESSIONS] };
+      return { success: true, status: 200, data: MOCK_SESSIONS.map(s => ({ ...s })) };
     }
 
     return apiClient.get<HunterSession[]>('/api/v1/hunter/sessions');
@@ -134,7 +136,7 @@ export const hunterService = {
   getSessionMessages: async (sessionId: string): Promise<ApiResponse<HunterMessage[]>> => {
     if (apiClient.getMockMode()) {
       await new Promise(r => setTimeout(r, 40));
-      const msgs = MOCK_SESSION_MESSAGES[sessionId] || [DEFAULT_WELCOME_MESSAGE];
+      const msgs = MOCK_SESSION_MESSAGES[sessionId] || [createWelcomeMessage()];
       return { success: true, status: 200, data: [...msgs] };
     }
 
@@ -157,8 +159,8 @@ export const hunterService = {
       };
 
       MOCK_SESSIONS.unshift(newSession);
-      MOCK_SESSION_MESSAGES[newSession.id] = [DEFAULT_WELCOME_MESSAGE];
-      return { success: true, status: 201, data: newSession };
+      MOCK_SESSION_MESSAGES[newSession.id] = [createWelcomeMessage()];
+      return { success: true, status: 201, data: { ...newSession } };
     }
 
     return apiClient.post<HunterSession, CreateSessionDto>('/api/v1/hunter/sessions', dto);
@@ -183,65 +185,97 @@ export const hunterService = {
    */
   sendPrompt: async (dto: SendPromptDto): Promise<ApiResponse<HunterMessage>> => {
     if (apiClient.getMockMode()) {
-      await new Promise(r => setTimeout(r, 700));
+      await new Promise(r => setTimeout(r, 650));
 
       const targetSessionId = dto.sessionId || MOCK_SESSIONS[0]?.id || 'sess-1';
-      const promptLower = (dto.prompt || '').toLowerCase();
-      let matchedJobs = MOCK_JOBS.slice(0, 2);
+      const trimmedPrompt = (dto.prompt || '').trim();
+      const promptLower = trimmedPrompt.toLowerCase();
 
-      if (promptLower.includes('design') || promptLower.includes('product') || promptLower.includes('ux') || promptLower.includes('ui')) {
-        matchedJobs = [MOCK_JOBS[2]]; // Spotify Product Mobile Designer
-      } else if (promptLower.includes('architect') || promptLower.includes('staff')) {
-        matchedJobs = [MOCK_JOBS[1]]; // Amazon Solutions Architect
-      } else if (promptLower.includes('uber') || promptLower.includes('senior')) {
-        matchedJobs = [MOCK_JOBS[0]]; // Uber Senior RN Engineer
+      let matchedJobs = MOCK_JOBS.slice(0, 2);
+      if (
+        (promptLower.includes('design') ||
+          promptLower.includes('product') ||
+          promptLower.includes('ux') ||
+          promptLower.includes('ui')) &&
+        MOCK_JOBS[2]
+      ) {
+        matchedJobs = [MOCK_JOBS[2]];
+      } else if (
+        (promptLower.includes('finance') ||
+          promptLower.includes('strategy') ||
+          promptLower.includes('operations')) &&
+        MOCK_JOBS[3]
+      ) {
+        matchedJobs = [MOCK_JOBS[3]];
+      } else if (
+        (promptLower.includes('architect') || promptLower.includes('staff')) &&
+        MOCK_JOBS[1]
+      ) {
+        matchedJobs = [MOCK_JOBS[1]];
+      } else if ((promptLower.includes('uber') || promptLower.includes('senior')) && MOCK_JOBS[0]) {
+        matchedJobs = [MOCK_JOBS[0]];
       }
 
+      const now = Date.now();
+      const primaryJob = matchedJobs[0];
+      const followUpPrompts = primaryJob
+        ? [
+            `Compare ${primaryJob.company} offer package with market data`,
+            `Search more ${primaryJob.workplaceType} roles like ${primaryJob.title}`,
+          ]
+        : ['Scout Remote Product Lead openings', 'Audit CV for leadership roles'];
+
+      const userEntry: HunterMessage = {
+        id: `msg-user-${now}`,
+        role: 'user',
+        content: trimmedPrompt,
+        timestamp: now - 1,
+      };
+
       const agentReply: HunterMessage = {
-        id: `msg-${Date.now()}`,
+        id: `msg-${now}`,
         role: 'agent',
-        content: `I scanned official Greenhouse & Lever boards alongside public feeds. Found ${matchedJobs.length} verified roles matching your criteria.`,
-        timestamp: Date.now(),
+        content: `I scanned curated ATS boards and employer feeds. Found ${matchedJobs.length} ${matchedJobs.length === 1 ? 'role' : 'roles'} matching your criteria.`,
+        timestamp: now,
         steps: [
           {
-            id: 'step-1',
-            label: 'Connected to Greenhouse and Lever public endpoints',
+            id: `step-1-${now}`,
+            label: 'Connected to curated ATS boards and public feeds',
             status: 'completed',
-            timestamp: Date.now() - 500,
+            timestamp: now - 450,
           },
           {
-            id: 'step-2',
-            label: 'Extracted listings matching keyword specifications',
+            id: `step-2-${now}`,
+            label: 'Extracted listings matching role & keyword specifications',
             status: 'completed',
-            timestamp: Date.now() - 250,
+            timestamp: now - 220,
           },
           {
-            id: 'step-3',
-            label: 'Verified compensation and remote eligibility',
+            id: `step-3-${now}`,
+            label: 'Verified compensation range and workplace arrangement',
             status: 'completed',
-            timestamp: Date.now(),
+            timestamp: now,
           },
         ],
         jobs: matchedJobs,
-        suggestedPrompts: [
-          'Add Uber role to my Pipeline',
-          'Optimize my CV for Amazon Solutions Architect',
-        ],
+        suggestedPrompts: followUpPrompts,
       };
 
       if (!MOCK_SESSION_MESSAGES[targetSessionId]) {
-        MOCK_SESSION_MESSAGES[targetSessionId] = [DEFAULT_WELCOME_MESSAGE];
+        MOCK_SESSION_MESSAGES[targetSessionId] = [createWelcomeMessage()];
+      }
+      if (trimmedPrompt) {
+        MOCK_SESSION_MESSAGES[targetSessionId].push(userEntry);
       }
       MOCK_SESSION_MESSAGES[targetSessionId].push(agentReply);
 
-      // Update session snippet & counts
       const targetSession = MOCK_SESSIONS.find(s => s.id === targetSessionId);
       if (targetSession) {
-        targetSession.updatedAt = Date.now();
-        targetSession.lastSnippet = `Found ${matchedJobs.length} verified roles.`;
+        targetSession.updatedAt = now;
+        targetSession.lastSnippet = `Found ${matchedJobs.length} verified ${matchedJobs.length === 1 ? 'role' : 'roles'}.`;
         targetSession.jobsFoundCount = (targetSession.jobsFoundCount || 0) + matchedJobs.length;
-        if (targetSession.title === 'New Hunt Session' && dto.prompt) {
-          targetSession.title = dto.prompt.slice(0, 32);
+        if (targetSession.title === 'New Hunt Session' && trimmedPrompt) {
+          targetSession.title = trimmedPrompt.slice(0, 32);
         }
       }
 
@@ -258,7 +292,7 @@ export const hunterService = {
     if (apiClient.getMockMode()) {
       await new Promise(r => setTimeout(r, 30));
       const target = sessionId || MOCK_SESSIONS[0]?.id || 'sess-1';
-      MOCK_SESSION_MESSAGES[target] = [DEFAULT_WELCOME_MESSAGE];
+      MOCK_SESSION_MESSAGES[target] = [createWelcomeMessage()];
       return { success: true, status: 200, data: undefined };
     }
 
