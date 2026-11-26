@@ -12,6 +12,14 @@ import { useOnboardingStore } from '@/modules/onboarding';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
+const DOCK_EXCLUDED_ROUTES = [
+  '/login',
+  '/register',
+  '/auth',
+  '/onboarding',
+  '/setup-profile',
+] as const;
+
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   const pathname = usePathname();
@@ -21,12 +29,9 @@ export default function RootLayout() {
 
   const [isSplashActive, setIsSplashActive] = useState(true);
 
-  const isExcludedFromDock =
-    pathname === '/login' ||
-    pathname === '/register' ||
-    pathname === '/auth' ||
-    pathname === '/onboarding' ||
-    pathname === '/setup-profile';
+  const isExcludedFromDock = DOCK_EXCLUDED_ROUTES.some(
+    (route) => pathname === route || pathname.startsWith(`${route}/`)
+  );
 
   // 1. Hide native OS splash screen once root layout renders
   useEffect(() => {

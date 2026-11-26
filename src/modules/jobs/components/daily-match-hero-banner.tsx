@@ -166,14 +166,7 @@ export function DailyMatchHeroBanner({
           ]}
           accessibilityRole="button"
           accessibilityLabel={`Review Daily Match Deck with ${count} curated opportunities`}>
-          <View style={styles.actionBtnLeft}>
-            <Text style={styles.actionBtnText}>Review Match Deck</Text>
-            {count > 0 ? (
-              <View style={styles.actionCountPip} accessibilityElementsHidden>
-                <Text style={styles.actionCountPipText}>{count}</Text>
-              </View>
-            ) : null}
-          </View>
+          <Text style={styles.actionBtnText}>Review Match Deck</Text>
           <View style={styles.actionBtnCircle} accessibilityElementsHidden>
             <ArrowRight size={14} color="#121212" strokeWidth={2.4} />
           </View>
@@ -345,31 +338,11 @@ const styles = StyleSheet.create({
     marginTop: 2,
     ...(Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : null),
   },
-  actionBtnLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
   actionBtnText: {
     fontSize: 13,
     fontWeight: '800',
     color: '#121212',
     letterSpacing: 0.3,
-  },
-  actionCountPip: {
-    backgroundColor: '#121212',
-    minWidth: 22,
-    height: 22,
-    borderRadius: Radius.full,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 6,
-  },
-  actionCountPipText: {
-    color: '#B8F23E',
-    fontSize: 10.5,
-    fontWeight: '800',
-    fontVariant: ['tabular-nums'],
   },
   actionBtnCircle: {
     width: 30,
