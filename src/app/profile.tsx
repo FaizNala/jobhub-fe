@@ -1,61 +1,76 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import {
+  ActivityIndicator,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import {
-  User,
-  ShieldCheck,
+  AlertCircle,
+  ArrowRight,
+  Banknote,
+  Bot,
+  Briefcase,
+  FileText,
+  LogOut,
   Mail,
   MapPin,
   Pencil,
-  FileText,
-  Bot,
-  Briefcase,
-  DollarSign,
-  ArrowRight,
+  ShieldCheck,
   TrendingUp,
-  Sliders,
-  LogOut,
+  User,
 } from 'lucide-react-native';
 import { Colors, Radius } from '@/constants/theme';
-import { Display, Heading, Body, Label } from '@/components/atoms/typography';
+import { Body, Display, Heading, Label } from '@/components/atoms/typography';
 import { CandidateAvatar } from '@/components/atoms/candidate-avatar';
-import { useCandidateProfile, ProfileEditModal } from '@/modules/cv-studio';
+import { ProfileEditModal, useCandidateProfile } from '@/modules/cv-studio';
 import { useAuth } from '@/modules/auth';
 import { usePipeline } from '@/modules/pipeline';
 
 export default function ProfileScreen() {
-  const { profile, updateProfile } = useCandidateProfile();
-  const { user, logout } = useAuth();
-  const { countsByStage } = usePipeline();
+  const { profile, isLoading, error, getProfile, updateProfile } = useCandidateProfile();
+  const { user, isLoading: isAuthLoading, logout } = useAuth();
+  const {
+    countsByStage,
+    isLoading: isPipelineLoading,
+    error: pipelineError,
+  } = usePipeline();
 
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
+  const [signOutError, setSignOutError] = useState<string | null>(null);
 
   const handleSignOut = async () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-    await logout();
-    router.replace('/login' as any);
+    if (isSigningOut) return;
+    setSignOutError(null);
+    setIsSigningOut(true);
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+      await logout();
+      router.replace('/login' as any);
+    } catch (err: any) {
+      setSignOutError(err?.message || 'Unable to sign out right now. Please try again.');
+    } finally {
+      setIsSigningOut(false);
+    }
   };
 
-  const displayName = profile?.fullName || user?.name || 'Alex Vance';
-  const displayRole = profile?.headline || 'Senior Mobile Engineer & Systems Architect';
-  const displayLocation = profile?.location || 'San Francisco, CA';
-  const displayEmail = user?.email || 'alex.vance@example.com';
+  const displayName = profile?.fullName || user?.name || 'Candidate Profile';
+  const displayRole = profile?.headline || 'Professional headline not set';
+  const displayLocation = profile?.location || 'Location not specified';
+  const displayEmail = profile?.contact?.email || user?.email || 'No email linked';
 
-  // Target Roles & Job Preferences (Multi-select)
-  const targetRoles = profile?.preferences?.targetRoles ?? [
-    'Senior React Native Engineer',
-    'Mobile Solutions Architect',
-  ];
-  const workModels = profile?.preferences?.workModels ?? ['Remote', 'Hybrid'];
-  const targetLocations = profile?.preferences?.targetLocations ?? [
-    'San Francisco, CA',
-    'Remote (US)',
-  ];
-  const minCompensation =
-    profile?.preferences?.minCompensation || '$150k - $210k / year';
+  const targetRoles = profile?.preferences?.targetRoles ?? [];
+  const workModels = profile?.preferences?.workModels ?? [];
+  const targetLocations = profile?.preferences?.targetLocations ?? [];
+  const minCompensation = profile?.preferences?.minCompensation ?? '';
 
   const interviewCount = countsByStage.interviewing ?? 0;
   const shortlistCount = countsByStage.shortlisted ?? 0;
@@ -68,215 +83,365 @@ export default function ProfileScreen() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}>
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.badgeRow}>
-            <View style={styles.iconCircle}>
-              <User size={14} color="#121212" />
-            </View>
-            <Label style={styles.badgeText}>CANDIDATE DOSSIER</Label>
-          </View>
-
-          <View style={styles.titleRow}>
-            <Display style={styles.title}>
-              APPLICANT{'\n'}PROFILE
-            </Display>
-            <TouchableOpacity
-              onPress={() => setIsEditModalVisible(true)}
-              style={styles.editHeaderButton}
-              activeOpacity={0.8}
-              accessibilityLabel="Edit profile details and preferences">
-              <Pencil size={13} color="#121212" />
-              <Label style={styles.editHeaderText}>EDIT PROFILE</Label>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Primary Identity Card */}
-        <View style={styles.profileCard}>
-          <CandidateAvatar size={64} />
-
-          <Heading style={styles.name}>{displayName}</Heading>
-          <Body style={styles.role}>{displayRole}</Body>
-
-          {/* Location & Email */}
-          <View style={styles.metaRow}>
-            <View style={styles.metaItem}>
-              <MapPin size={12} color="#5A5D54" />
-              <Body style={styles.metaText}>{displayLocation}</Body>
-            </View>
-            <View style={styles.metaItem}>
-              <Mail size={12} color="#5A5D54" />
-              <Body style={styles.metaText}>{displayEmail}</Body>
-            </View>
-            <View style={styles.metaItem}>
-              <ShieldCheck size={12} color="#2F4F00" />
-              <Body style={styles.verifiedText}>Verified</Body>
-            </View>
-          </View>
-        </View>
-
-        {/* Section: Target Roles & Career Preferences */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Heading style={styles.sectionTitle}>Job Preferences & Targets</Heading>
-          </View>
-
-          <View style={styles.preferencesCard}>
-            {/* Target Roles */}
-            <View style={styles.preferenceBlock}>
-              <Label style={styles.preferenceLabel}>TARGET ROLES</Label>
-              <View style={styles.chipsRow}>
-                {targetRoles.length > 0 ? (
-                  targetRoles.map(role => (
-                    <View key={role} style={styles.roleChip}>
-                      <Briefcase size={12} color="#2F4F00" />
-                      <Body style={styles.roleChipText}>{role}</Body>
-                    </View>
-                  ))
-                ) : (
-                  <Body style={styles.emptyPreferenceText}>No target roles specified</Body>
-                )}
+        <View style={styles.contentWrapper}>
+          {/* Header */}
+          <View style={styles.header}>
+            <View style={styles.badgeRow}>
+              <View style={styles.iconCircle} accessibilityElementsHidden>
+                <User size={14} color="#121212" />
               </View>
+              <Label style={styles.badgeText}>CANDIDATE DOSSIER</Label>
             </View>
 
-            {/* Work Model Preference */}
-            <View style={styles.preferenceBlock}>
-              <Label style={styles.preferenceLabel}>WORK MODEL PREFERENCE</Label>
-              <View style={styles.chipsRow}>
-                {workModels.length > 0 ? (
-                  workModels.map(model => (
-                    <View key={model} style={styles.modelChip}>
-                      <Body style={styles.modelChipText}>{model}</Body>
-                    </View>
-                  ))
-                ) : (
-                  <Body style={styles.emptyPreferenceText}>Flexible / Open to any work model</Body>
-                )}
-              </View>
-            </View>
-
-            {/* Target Locations */}
-            <View style={styles.preferenceBlock}>
-              <Label style={styles.preferenceLabel}>TARGET LOCATIONS</Label>
-              <View style={styles.chipsRow}>
-                {targetLocations.length > 0 ? (
-                  targetLocations.map(loc => (
-                    <View key={loc} style={styles.locationChip}>
-                      <MapPin size={11} color="#5A5D54" />
-                      <Body style={styles.locationChipText}>{loc}</Body>
-                    </View>
-                  ))
-                ) : (
-                  <Body style={styles.emptyPreferenceText}>Open to remote / any location</Body>
-                )}
-              </View>
-            </View>
-
-            {/* Expected Compensation */}
-            <View style={[styles.preferenceBlock, { borderBottomWidth: 0 }]}>
-              <Label style={styles.preferenceLabel}>EXPECTED COMPENSATION</Label>
-              <View style={styles.compensationRow}>
-                <DollarSign size={14} color="#2F4F00" />
-                <Heading style={styles.compensationValue}>
-                  {minCompensation || 'Open to discussion'}
-                </Heading>
-              </View>
-            </View>
-          </View>
-        </View>
-
-        {/* Section: Active Hiring Loops Momentum */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Heading style={styles.sectionTitle}>Hiring Pipeline</Heading>
-            <TouchableOpacity
-              onPress={() => router.push('/jobs' as any)}
-              accessibilityLabel="View pipeline tracker">
-              <Body style={styles.viewTrackerLink}>View tracker &rarr;</Body>
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.metricsContainer}>
-            <View style={styles.metricBox}>
-              <Briefcase size={16} color="#121212" />
-              <Display style={styles.metricValue}>{interviewCount}</Display>
-              <Body style={styles.metricLabel}>Interview Loop</Body>
-            </View>
-
-            <View style={styles.metricBox}>
-              <TrendingUp size={16} color="#2F4F00" />
-              <Display style={[styles.metricValue, { color: '#2F4F00' }]}>
-                {shortlistCount}
+            <View style={styles.titleRow}>
+              <Display style={styles.title}>
+                APPLICANT{'\n'}PROFILE
               </Display>
-              <Body style={styles.metricLabel}>Shortlisted</Body>
+              {profile ? (
+                <Pressable
+                  onPress={() => setIsEditModalVisible(true)}
+                  style={state => [
+                    styles.editHeaderButton,
+                    state.pressed && styles.pressedFade,
+                    Platform.OS === 'web' && (state as { focused?: boolean }).focused
+                      ? styles.webFocusRing
+                      : null,
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Edit profile details and preferences">
+                  <Pencil size={13} color="#121212" />
+                  <Label style={styles.editHeaderText}>EDIT PROFILE</Label>
+                </Pressable>
+              ) : null}
             </View>
+          </View>
 
-            <View style={styles.metricBox}>
-              <Bot size={16} color="#5A5D54" />
-              <Display style={styles.metricValue}>{scoutedCount}</Display>
-              <Body style={styles.metricLabel}>AI Scouted</Body>
+          {(isLoading || isAuthLoading) && !profile ? (
+            <View style={styles.stateBox} accessibilityLiveRegion="polite">
+              <ActivityIndicator size="small" color="#121212" />
+              <Body style={styles.stateBody}>Loading your candidate profile...</Body>
             </View>
-          </View>
-        </View>
+          ) : error && !profile ? (
+            <View style={styles.stateBox} accessibilityLiveRegion="polite">
+              <AlertCircle size={22} color="#991B1B" />
+              <Heading style={styles.stateTitle}>Unable to load profile</Heading>
+              <Body style={styles.stateBody}>{error}</Body>
+              <Pressable
+                onPress={() => getProfile()}
+                style={state => [
+                  styles.retryBtn,
+                  state.pressed && styles.pressedFade,
+                  Platform.OS === 'web' && (state as { focused?: boolean }).focused
+                    ? styles.webFocusRing
+                    : null,
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel="Retry loading profile">
+                <Label style={styles.retryBtnText}>RETRY</Label>
+              </Pressable>
+            </View>
+          ) : !profile ? (
+            <View style={styles.stateBox}>
+              <Heading style={styles.stateTitle}>No profile found</Heading>
+              <Body style={styles.stateBody}>
+                Refresh to load your candidate identity and job preferences.
+              </Body>
+              <Pressable
+                onPress={() => getProfile()}
+                style={state => [
+                  styles.retryBtn,
+                  state.pressed && styles.pressedFade,
+                  Platform.OS === 'web' && (state as { focused?: boolean }).focused
+                    ? styles.webFocusRing
+                    : null,
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel="Refresh profile">
+                <Label style={styles.retryBtnText}>REFRESH</Label>
+              </Pressable>
+            </View>
+          ) : (
+            <>
+              {/* Primary Identity Anchor Card (Obsidian Focal Point) */}
+              <View style={styles.profileCard}>
+                <CandidateAvatar size={64} name={displayName} tone="dark" />
 
-        {/* Section: Career Preparation & Tools */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Heading style={styles.sectionTitle}>Career Tools</Heading>
-          </View>
+                <Heading style={styles.name}>{displayName}</Heading>
+                <Body style={styles.role}>{displayRole}</Body>
 
-          <View style={styles.toolsContainer}>
-            {/* CV Studio Card */}
-            <TouchableOpacity
-              onPress={() => router.push('/cv' as any)}
-              activeOpacity={0.85}
-              style={styles.toolCard}>
-              <View style={styles.toolIconCircle}>
-                <FileText size={18} color="#121212" />
-              </View>
-              <View style={styles.toolContent}>
-                <Heading style={styles.toolTitle}>CV Studio & ATS Tailor</Heading>
-                <Body style={styles.toolSub}>
-                  Master dossier with work achievements & ATS keyword alignment.
-                </Body>
-              </View>
-              <ArrowRight size={16} color="#121212" />
-            </TouchableOpacity>
+                {/* Location & Email */}
+                <View style={styles.metaRow}>
+                  <View style={styles.metaItem}>
+                    <MapPin size={12} color="#D1D5DB" />
+                    <Body style={styles.metaText}>{displayLocation}</Body>
+                  </View>
+                  <View style={styles.metaItem}>
+                    <Mail size={12} color="#D1D5DB" />
+                    <Body style={styles.metaText}>{displayEmail}</Body>
+                  </View>
+                </View>
 
-            {/* Hunter Agent Card */}
-            <TouchableOpacity
-              onPress={() => router.push('/agent' as any)}
-              activeOpacity={0.85}
-              style={[styles.toolCard, styles.toolCardDark]}>
-              <View style={[styles.toolIconCircle, styles.toolIconLime]}>
-                <Bot size={18} color="#121212" />
+                <View style={styles.verifiedBadge}>
+                  <ShieldCheck size={13} color="#B8F23E" />
+                  <Label style={styles.verifiedText}>VERIFIED PROFILE</Label>
+                </View>
               </View>
-              <View style={styles.toolContent}>
-                <Heading style={[styles.toolTitle, styles.toolTitleLight]}>
-                  AI Career Hunter Co-Pilot
-                </Heading>
-                <Body style={[styles.toolSub, styles.toolSubLight]}>
-                  Autonomous discovery across public boards & ATS feeds.
-                </Body>
-              </View>
-              <ArrowRight size={16} color="#B8F23E" />
-            </TouchableOpacity>
-          </View>
-        </View>
 
-        {/* Section: Session / Sign out */}
-        <View style={styles.signOutSection}>
-          <TouchableOpacity
-            onPress={handleSignOut}
-            activeOpacity={0.75}
-            style={styles.signOutButton}
-            accessibilityRole="button"
-            accessibilityLabel="Sign out of JobHub">
-            <LogOut size={15} color="#DC2626" strokeWidth={2} />
-            <Text style={styles.signOutText}>Sign out of JobHub</Text>
-          </TouchableOpacity>
-          <Text style={styles.buildInfoText}>JobHub v1.0.0 • Mobile Developer Career OS</Text>
+              {/* Section: Target Roles & Career Preferences */}
+              <View style={styles.section}>
+                <View style={styles.sectionHeader}>
+                  <Heading style={styles.sectionTitle}>Job Preferences & Targets</Heading>
+                </View>
+
+                <View style={styles.preferencesCard}>
+                  {/* Target Roles */}
+                  <View style={styles.preferenceBlock}>
+                    <Label style={styles.preferenceLabel}>TARGET ROLES</Label>
+                    <View style={styles.chipsRow}>
+                      {targetRoles.length > 0 ? (
+                        targetRoles.map(role => (
+                          <View key={role} style={styles.roleChip}>
+                            <Briefcase size={12} color="#2F4F00" />
+                            <Body style={styles.roleChipText}>{role}</Body>
+                          </View>
+                        ))
+                      ) : (
+                        <Body style={styles.emptyPreferenceText}>
+                          No target roles specified yet
+                        </Body>
+                      )}
+                    </View>
+                  </View>
+
+                  {/* Work Model Preference */}
+                  <View style={styles.preferenceBlock}>
+                    <Label style={styles.preferenceLabel}>WORK MODEL PREFERENCE</Label>
+                    <View style={styles.chipsRow}>
+                      {workModels.length > 0 ? (
+                        workModels.map(model => (
+                          <View key={model} style={styles.modelChip}>
+                            <Body style={styles.modelChipText}>{model}</Body>
+                          </View>
+                        ))
+                      ) : (
+                        <Body style={styles.emptyPreferenceText}>
+                          Open to any work arrangement
+                        </Body>
+                      )}
+                    </View>
+                  </View>
+
+                  {/* Target Locations */}
+                  <View style={styles.preferenceBlock}>
+                    <Label style={styles.preferenceLabel}>TARGET LOCATIONS</Label>
+                    <View style={styles.chipsRow}>
+                      {targetLocations.length > 0 ? (
+                        targetLocations.map(loc => (
+                          <View key={loc} style={styles.locationChip}>
+                            <MapPin size={11} color="#5A5D54" />
+                            <Body style={styles.locationChipText}>{loc}</Body>
+                          </View>
+                        ))
+                      ) : (
+                        <Body style={styles.emptyPreferenceText}>
+                          Open to any location or remote
+                        </Body>
+                      )}
+                    </View>
+                  </View>
+
+                  {/* Expected Compensation */}
+                  <View style={[styles.preferenceBlock, styles.preferenceBlockLast]}>
+                    <Label style={styles.preferenceLabel}>EXPECTED COMPENSATION</Label>
+                    <View style={styles.compensationRow}>
+                      <Banknote size={15} color="#2F4F00" />
+                      <Heading style={styles.compensationValue}>
+                        {minCompensation || 'Open to discussion'}
+                      </Heading>
+                    </View>
+                  </View>
+                </View>
+              </View>
+
+              {/* Section: Active Hiring Loops Momentum */}
+              <View style={styles.section}>
+                <View style={styles.sectionHeader}>
+                  <Heading style={styles.sectionTitle}>Hiring Pipeline</Heading>
+                  <Pressable
+                    onPress={() => router.push('/jobs' as any)}
+                    style={state => [
+                      styles.viewTrackerBtn,
+                      state.pressed && styles.pressedFade,
+                      Platform.OS === 'web' && (state as { focused?: boolean }).focused
+                        ? styles.webFocusRing
+                        : null,
+                    ]}
+                    accessibilityRole="button"
+                    accessibilityLabel="Open hiring pipeline tracker">
+                    <Body style={styles.viewTrackerLink}>Open tracker</Body>
+                  </Pressable>
+                </View>
+
+                {pipelineError ? (
+                  <View style={styles.inlineWarning} accessibilityLiveRegion="polite">
+                    <AlertCircle size={14} color="#991B1B" />
+                    <Body style={styles.inlineWarningText}>
+                      Pipeline counts unavailable right now.
+                    </Body>
+                  </View>
+                ) : null}
+
+                <View style={styles.metricsContainer}>
+                  <Pressable
+                    onPress={() => router.push('/jobs?stage=interviewing' as any)}
+                    style={state => [
+                      styles.metricBox,
+                      state.pressed && styles.pressedFade,
+                      Platform.OS === 'web' && (state as { focused?: boolean }).focused
+                        ? styles.webFocusRing
+                        : null,
+                    ]}
+                    accessibilityRole="button"
+                    accessibilityLabel={`View ${interviewCount} applications in Interview Loop`}>
+                    <Briefcase size={16} color="#121212" />
+                    <Display style={styles.metricValue}>
+                      {isPipelineLoading ? '–' : interviewCount}
+                    </Display>
+                    <Body style={styles.metricLabel}>Interview Loop</Body>
+                  </Pressable>
+
+                  <Pressable
+                    onPress={() => router.push('/jobs?stage=shortlisted' as any)}
+                    style={state => [
+                      styles.metricBox,
+                      state.pressed && styles.pressedFade,
+                      Platform.OS === 'web' && (state as { focused?: boolean }).focused
+                        ? styles.webFocusRing
+                        : null,
+                    ]}
+                    accessibilityRole="button"
+                    accessibilityLabel={`View ${shortlistCount} shortlisted applications`}>
+                    <TrendingUp size={16} color="#2F4F00" />
+                    <Display style={[styles.metricValue, styles.metricValueAccent]}>
+                      {isPipelineLoading ? '–' : shortlistCount}
+                    </Display>
+                    <Body style={styles.metricLabel}>Shortlisted</Body>
+                  </Pressable>
+
+                  <Pressable
+                    onPress={() => router.push('/jobs?stage=scouted' as any)}
+                    style={state => [
+                      styles.metricBox,
+                      state.pressed && styles.pressedFade,
+                      Platform.OS === 'web' && (state as { focused?: boolean }).focused
+                        ? styles.webFocusRing
+                        : null,
+                    ]}
+                    accessibilityRole="button"
+                    accessibilityLabel={`View ${scoutedCount} AI scouted roles`}>
+                    <Bot size={16} color="#5A5D54" />
+                    <Display style={styles.metricValue}>
+                      {isPipelineLoading ? '–' : scoutedCount}
+                    </Display>
+                    <Body style={styles.metricLabel}>AI Scouted</Body>
+                  </Pressable>
+                </View>
+              </View>
+
+              {/* Section: Career Preparation & Tools */}
+              <View style={styles.section}>
+                <View style={styles.sectionHeader}>
+                  <Heading style={styles.sectionTitle}>Career Tools</Heading>
+                </View>
+
+                <View style={styles.toolsContainer}>
+                  <Pressable
+                    onPress={() => router.push('/cv' as any)}
+                    style={state => [
+                      styles.toolCard,
+                      state.pressed && styles.pressedFade,
+                      Platform.OS === 'web' && (state as { focused?: boolean }).focused
+                        ? styles.webFocusRing
+                        : null,
+                    ]}
+                    accessibilityRole="button"
+                    accessibilityLabel="Open CV Studio and ATS Tailor">
+                    <View style={styles.toolIconCircle}>
+                      <FileText size={18} color="#121212" />
+                    </View>
+                    <View style={styles.toolContent}>
+                      <Heading style={styles.toolTitle}>CV Studio & ATS Tailor</Heading>
+                      <Body style={styles.toolSub}>
+                        Master dossier with achievements & ATS keyword alignment.
+                      </Body>
+                    </View>
+                    <ArrowRight size={16} color="#121212" />
+                  </Pressable>
+
+                  <Pressable
+                    onPress={() => router.push('/agent' as any)}
+                    style={state => [
+                      styles.toolCard,
+                      styles.toolCardHighlighted,
+                      state.pressed && styles.pressedFade,
+                      Platform.OS === 'web' && (state as { focused?: boolean }).focused
+                        ? styles.webFocusRing
+                        : null,
+                    ]}
+                    accessibilityRole="button"
+                    accessibilityLabel="Open AI Career Hunter Co-Pilot">
+                    <View style={[styles.toolIconCircle, styles.toolIconLime]}>
+                      <Bot size={18} color="#121212" />
+                    </View>
+                    <View style={styles.toolContent}>
+                      <Heading style={styles.toolTitle}>AI Career Hunter Co-Pilot</Heading>
+                      <Body style={styles.toolSub}>
+                        Targeted discovery across curated role feeds & career boards.
+                      </Body>
+                    </View>
+                    <ArrowRight size={16} color="#121212" />
+                  </Pressable>
+                </View>
+              </View>
+
+              {/* Section: Session / Sign out */}
+              <View style={styles.signOutSection}>
+                {signOutError ? (
+                  <View style={styles.inlineWarning} accessibilityLiveRegion="polite">
+                    <AlertCircle size={14} color="#991B1B" />
+                    <Body style={styles.inlineWarningText}>{signOutError}</Body>
+                  </View>
+                ) : null}
+
+                <Pressable
+                  onPress={handleSignOut}
+                  disabled={isSigningOut}
+                  style={state => [
+                    styles.signOutButton,
+                    isSigningOut && styles.disabledButton,
+                    state.pressed && !isSigningOut && styles.pressedFade,
+                    Platform.OS === 'web' && (state as { focused?: boolean }).focused
+                      ? styles.webFocusRing
+                      : null,
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityState={{ busy: isSigningOut, disabled: isSigningOut }}
+                  accessibilityLabel="Sign out of JobHub">
+                  {isSigningOut ? (
+                    <ActivityIndicator size="small" color="#991B1B" />
+                  ) : (
+                    <>
+                      <LogOut size={15} color="#991B1B" strokeWidth={2.2} />
+                      <Text style={styles.signOutText}>Sign out of JobHub</Text>
+                    </>
+                  )}
+                </Pressable>
+                <Text style={styles.buildInfoText}>
+                  JobHub v1.0.0 · Career Operating System
+                </Text>
+              </View>
+            </>
+          )}
         </View>
       </ScrollView>
 
@@ -300,6 +465,11 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: 110,
+  },
+  contentWrapper: {
+    width: '100%',
+    maxWidth: 720,
+    alignSelf: 'center',
   },
   header: {
     paddingHorizontal: 20,
@@ -332,6 +502,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-end',
+    gap: 12,
   },
   title: {
     fontSize: 26,
@@ -340,51 +511,87 @@ const styles = StyleSheet.create({
     fontWeight: '900',
   },
   editHeaderButton: {
+    minHeight: 44,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
     backgroundColor: '#FFFFFF',
-    paddingHorizontal: 12,
-    paddingVertical: 7,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
     borderRadius: Radius.full,
     borderWidth: 1.5,
     borderColor: Colors.light.border,
+    ...(Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : null),
   },
   editHeaderText: {
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: '800',
     color: '#121212',
     letterSpacing: 0.5,
   },
+  stateBox: {
+    paddingHorizontal: 24,
+    paddingVertical: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+  },
+  stateTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#121212',
+    textAlign: 'center',
+  },
+  stateBody: {
+    fontSize: 13,
+    lineHeight: 19,
+    color: '#5A5D54',
+    textAlign: 'center',
+    maxWidth: 300,
+  },
+  retryBtn: {
+    marginTop: 4,
+    minHeight: 44,
+    minWidth: 110,
+    backgroundColor: '#121212',
+    borderRadius: Radius.full,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...(Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : null),
+  },
+  retryBtnText: {
+    fontSize: 11.5,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: 0.5,
+  },
   profileCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#121212',
     borderRadius: Radius.lg,
-    padding: 20,
+    padding: 22,
     marginHorizontal: 20,
     alignItems: 'center',
     borderWidth: 1.5,
-    borderColor: Colors.light.border,
+    borderColor: '#2A2D26',
     gap: 10,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 2,
   },
   name: {
     fontSize: 20,
     fontWeight: '800',
-    color: '#121212',
+    color: '#FFFFFF',
+    textAlign: 'center',
   },
   role: {
     fontSize: 13,
-    color: '#5A5D54',
+    color: '#D1D5DB',
     textAlign: 'center',
+    lineHeight: 19,
   },
   metaRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
+    gap: 14,
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 2,
@@ -392,20 +599,33 @@ const styles = StyleSheet.create({
   metaItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 5,
   },
   metaText: {
     fontSize: 12,
-    color: '#5A5D54',
+    color: '#D1D5DB',
+  },
+  verifiedBadge: {
+    marginTop: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#1C1E1A',
+    borderWidth: 1,
+    borderColor: '#2A2D26',
+    borderRadius: Radius.sm,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
   },
   verifiedText: {
-    fontSize: 12,
-    color: '#2F4F00',
-    fontWeight: '600',
+    fontSize: 10.5,
+    color: '#B8F23E',
+    fontWeight: '800',
+    letterSpacing: 0.5,
   },
   section: {
     paddingHorizontal: 20,
-    marginTop: 32,
+    marginTop: 28,
     gap: 12,
   },
   sectionHeader: {
@@ -414,40 +634,31 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingBottom: 2,
   },
-  sectionTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
   sectionTitle: {
     fontSize: 13.5,
     fontWeight: '800',
     color: '#121212',
     letterSpacing: 0.2,
   },
-  sectionBadge: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#5A5D54',
-    letterSpacing: 0.5,
+  viewTrackerBtn: {
+    minHeight: 44,
+    justifyContent: 'center',
+    paddingHorizontal: 8,
+    borderRadius: Radius.sm,
+    ...(Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : null),
   },
   viewTrackerLink: {
     fontSize: 12,
-    fontWeight: '600',
-    color: '#5A5D54',
+    fontWeight: '700',
+    color: '#2F4F00',
   },
   preferencesCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: Radius.md,
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 14,
     borderWidth: 1.5,
     borderColor: Colors.light.border,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.03,
-    shadowRadius: 6,
-    elevation: 1,
     gap: 14,
   },
   preferenceBlock: {
@@ -455,6 +666,10 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#F4F6F0',
+  },
+  preferenceBlockLast: {
+    borderBottomWidth: 0,
+    paddingBottom: 0,
   },
   preferenceLabel: {
     fontSize: 10.5,
@@ -503,7 +718,7 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     borderRadius: Radius.sm,
     borderWidth: 1,
-    borderColor: '#E2E6DC',
+    borderColor: Colors.light.border,
   },
   locationChipText: {
     fontSize: 11,
@@ -512,18 +727,35 @@ const styles = StyleSheet.create({
   },
   emptyPreferenceText: {
     fontSize: 12,
-    color: '#8A8F82',
+    color: '#5A5D54',
     fontStyle: 'italic',
   },
   compensationRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 8,
   },
   compensationValue: {
     fontSize: 14,
     fontWeight: '800',
     color: '#121212',
+  },
+  inlineWarning: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    width: '100%',
+    backgroundColor: '#FEE2E2',
+    borderWidth: 1,
+    borderColor: '#FCA5A5',
+    borderRadius: Radius.sm,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+  },
+  inlineWarningText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#991B1B',
   },
   metricsContainer: {
     flexDirection: 'row',
@@ -531,34 +763,38 @@ const styles = StyleSheet.create({
   },
   metricBox: {
     flex: 1,
+    minHeight: 96,
     backgroundColor: '#FFFFFF',
     borderRadius: Radius.md,
     padding: 14,
     alignItems: 'center',
+    justifyContent: 'center',
     borderWidth: 1.5,
     borderColor: Colors.light.border,
-    gap: 3,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.03,
-    shadowRadius: 6,
-    elevation: 2,
+    gap: 4,
+    ...(Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : null),
   },
   metricValue: {
     fontSize: 22,
     lineHeight: 26,
     color: '#121212',
     fontWeight: '800',
+    fontVariant: ['tabular-nums'],
+  },
+  metricValueAccent: {
+    color: '#2F4F00',
   },
   metricLabel: {
     fontSize: 10.5,
     color: '#5A5D54',
     fontWeight: '600',
+    textAlign: 'center',
   },
   toolsContainer: {
     gap: 10,
   },
   toolCard: {
+    minHeight: 74,
     backgroundColor: '#FFFFFF',
     borderRadius: Radius.md,
     padding: 16,
@@ -567,20 +803,15 @@ const styles = StyleSheet.create({
     gap: 12,
     borderWidth: 1.5,
     borderColor: Colors.light.border,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.03,
-    shadowRadius: 6,
-    elevation: 1,
+    ...(Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : null),
   },
-  toolCardDark: {
-    backgroundColor: '#121212',
-    borderColor: 'rgba(184, 242, 62, 0.4)',
+  toolCardHighlighted: {
+    borderColor: '#C5D89B',
   },
   toolIconCircle: {
     width: 40,
     height: 40,
-    borderRadius: 20,
+    borderRadius: Radius.full,
     backgroundColor: '#F4F6F0',
     alignItems: 'center',
     justifyContent: 'center',
@@ -597,24 +828,19 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#121212',
   },
-  toolTitleLight: {
-    color: '#FFFFFF',
-  },
   toolSub: {
-    fontSize: 11,
+    fontSize: 11.5,
     color: '#5A5D54',
     lineHeight: 16,
   },
-  toolSubLight: {
-    color: '#C4C9BD',
-  },
   signOutSection: {
     paddingHorizontal: 20,
-    marginTop: 20,
+    marginTop: 24,
     alignItems: 'center',
     gap: 12,
   },
   signOutButton: {
+    minHeight: 48,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -622,20 +848,33 @@ const styles = StyleSheet.create({
     width: '100%',
     backgroundColor: '#FFF5F5',
     borderWidth: 1.5,
-    borderColor: '#FEE2E2',
-    borderRadius: Radius.lg,
-    paddingVertical: 14,
+    borderColor: '#FCA5A5',
+    borderRadius: Radius.full,
+    paddingVertical: 12,
+    ...(Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : null),
   },
   signOutText: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#DC2626',
+    color: '#991B1B',
     letterSpacing: 0.2,
+  },
+  disabledButton: {
+    opacity: 0.65,
   },
   buildInfoText: {
     fontSize: 11,
-    fontWeight: '500',
-    color: '#9EA396',
+    fontWeight: '600',
+    color: '#5A5D54',
     letterSpacing: 0.3,
   },
+  pressedFade: {
+    opacity: 0.78,
+  },
+  webFocusRing: {
+    outlineWidth: 2,
+    outlineStyle: 'solid',
+    outlineColor: '#121212',
+    outlineOffset: 2,
+  } as any,
 });

@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Platform,
@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { AlertCircle, Briefcase, SlidersHorizontal } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { Colors, Radius } from '@/constants/theme';
@@ -22,11 +22,22 @@ import {
   PipelineFilterModal,
   PipelineItem,
   PipelineSortOption,
+  PipelineStage,
   PipelineStageModal,
   PipelineStageTabs,
   PipelineWorkplaceFilter,
   usePipeline,
 } from '@/modules/pipeline';
+
+const VALID_STAGES: ReadonlySet<string> = new Set([
+  'all',
+  'scouted',
+  'shortlisted',
+  'applied',
+  'interviewing',
+  'offered',
+  'rejected',
+]);
 
 const STAGE_LABELS: Record<string, string> = {
   all: 'All Applications',
@@ -51,6 +62,15 @@ export default function JobsScreen() {
     addNote,
     remove,
   } = usePipeline();
+
+  const { stage: stageParam } = useLocalSearchParams<{ stage?: string }>();
+
+  useEffect(() => {
+    const normalized = Array.isArray(stageParam) ? stageParam[0] : stageParam;
+    if (normalized && VALID_STAGES.has(normalized)) {
+      setSelectedStage(normalized as PipelineStage | 'all');
+    }
+  }, [setSelectedStage, stageParam]);
 
   const [detailJob, setDetailJob] = useState<Job | null>(null);
   const [managingItem, setManagingItem] = useState<PipelineItem | null>(null);
