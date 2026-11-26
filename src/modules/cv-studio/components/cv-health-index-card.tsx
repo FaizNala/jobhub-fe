@@ -103,15 +103,12 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: '#121212',
     borderRadius: Radius.lg,
+    borderWidth: 1.5,
+    borderColor: '#2A2D26',
     padding: 20,
     marginHorizontal: 20,
     marginTop: 18,
     gap: 14,
-    shadowColor: '#121212',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.14,
-    shadowRadius: 14,
-    elevation: 4,
   },
   headerRow: {
     flexDirection: 'row',

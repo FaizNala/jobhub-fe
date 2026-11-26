@@ -257,11 +257,6 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     paddingBottom: 32,
     gap: 18,
-    shadowColor: '#121212',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
-    elevation: 8,
   },
   headerRow: {
     flexDirection: 'row',

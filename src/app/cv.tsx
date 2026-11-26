@@ -308,8 +308,8 @@ const styles = StyleSheet.create({
   header: {
     paddingHorizontal: 20,
     paddingTop: 16,
-    paddingBottom: 12,
-    gap: 12,
+    paddingBottom: 14,
+    gap: 10,
   },
   badgeRow: {
     flexDirection: 'row',
@@ -317,8 +317,8 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   iconCircle: {
-    width: 24,
-    height: 24,
+    width: 26,
+    height: 26,
     borderRadius: Radius.full,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
@@ -327,7 +327,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   badgeText: {
-    fontSize: 10.5,
+    fontSize: 11,
     fontWeight: '800',
     color: '#121212',
     letterSpacing: 0.5,
@@ -382,11 +382,8 @@ const styles = StyleSheet.create({
   },
   togglePillActive: {
     backgroundColor: '#FFFFFF',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
   },
   toggleText: {
     fontSize: 10.5,

@@ -295,14 +295,14 @@ const styles = StyleSheet.create({
   },
   pageColumn: {
     width: '100%',
-    maxWidth: 680,
+    maxWidth: 720,
     alignSelf: 'center',
   },
   header: {
     paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 16,
-    gap: 16,
+    paddingTop: 16,
+    paddingBottom: 14,
+    gap: 10,
   },
   badgeRow: {
     flexDirection: 'row',
@@ -310,9 +310,9 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   iconCircle: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 26,
+    height: 26,
+    borderRadius: Radius.full,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: Colors.light.border,
@@ -321,9 +321,9 @@ const styles = StyleSheet.create({
   },
   badgeText: {
     fontSize: 11,
-    letterSpacing: 1,
+    letterSpacing: 0.5,
     color: '#121212',
-    fontWeight: '700',
+    fontWeight: '800',
   },
   titleRow: {
     flexDirection: 'row',
@@ -332,11 +332,11 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   heroText: {
-    fontSize: 28,
-    lineHeight: 32,
+    fontSize: 26,
+    lineHeight: 30,
     color: '#121212',
     fontWeight: '900',
-    letterSpacing: -0.8,
+    letterSpacing: -0.6,
   },
   filterButton: {
     minHeight: 44,

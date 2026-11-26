@@ -1,18 +1,18 @@
 import React from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
+  Pressable,
   ScrollView,
+  StyleSheet,
+  Text,
+  View,
   useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
-import { Sparkles } from 'lucide-react-native';
-import { Radius } from '@/constants/theme';
+import { Briefcase } from 'lucide-react-native';
+import { Colors, Radius } from '@/constants/theme';
 import { AuthStorysetIllustration } from '@/components/atoms/auth-storyset-illustration';
 
 export interface AuthLayoutProps {
@@ -55,7 +55,7 @@ export function AuthLayout({
 
       {/* Error Message */}
       {errorMessage ? (
-        <View style={styles.errorBanner}>
+        <View style={styles.errorBanner} accessibilityLiveRegion="polite">
           <Text style={styles.errorText}>{errorMessage}</Text>
         </View>
       ) : null}
@@ -66,12 +66,19 @@ export function AuthLayout({
       {/* Switcher */}
       <View style={styles.switchRow}>
         <Text style={styles.switchText}>{switcherText}</Text>
-        <TouchableOpacity
+        <Pressable
           onPress={onSwitcherPress}
-          activeOpacity={0.7}
-          style={styles.switchAction}>
+          style={state => [
+            styles.switchAction,
+            state.pressed && styles.pressedFade,
+            Platform.OS === 'web' && (state as { focused?: boolean }).focused
+              ? styles.webFocusRing
+              : null,
+          ]}
+          accessibilityRole="button"
+          accessibilityLabel={switcherActionLabel}>
           <Text style={styles.switchLink}>{switcherActionLabel}</Text>
-        </TouchableOpacity>
+        </Pressable>
       </View>
     </View>
   );
@@ -93,10 +100,14 @@ export function AuthLayout({
                 <AuthStorysetIllustration width={440} height={390} />
                 <View style={styles.illustrationTextGroup}>
                   <View style={styles.illustrationBadge}>
-                    <Sparkles size={14} color="#121212" />
-                    <Text style={styles.illustrationBadgeText}>Built for modern professionals</Text>
+                    <Briefcase size={14} color="#121212" />
+                    <Text style={styles.illustrationBadgeText}>
+                      Built for modern professionals
+                    </Text>
                   </View>
-                  <Text style={styles.illustrationTitle}>Your next career leap, organized.</Text>
+                  <Text style={styles.illustrationTitle}>
+                    Your next career leap, organized.
+                  </Text>
                   <Text style={styles.illustrationSubtitle}>
                     Track applications, tailor CVs, and bypass recruiter noise.
                   </Text>
@@ -105,18 +116,16 @@ export function AuthLayout({
             </View>
           </View>
         ) : (
-          /* Mobile Layout (Airy, vertical flow) */
+          /* Mobile Layout */
           <ScrollView
             style={styles.mobileScrollView}
             contentContainerStyle={styles.mobileScrollContent}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}>
-            {/* Mobile Illustration */}
             <View style={styles.mobileIllustrationWrapper}>
               <AuthStorysetIllustration width={220} height={195} />
             </View>
 
-            {/* Mobile Open Form */}
             {renderFormContent()}
           </ScrollView>
         )}
@@ -133,8 +142,6 @@ const styles = StyleSheet.create({
   keyboardContainer: {
     flex: 1,
   },
-
-  /* Wide Split Layout */
   wideContainer: {
     flex: 1,
     flexDirection: 'row',
@@ -154,9 +161,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 48,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F4F6F0',
     borderLeftWidth: 1,
-    borderColor: '#F0F2EB',
+    borderColor: Colors.light.border,
   },
   illustrationFrame: {
     alignItems: 'center',
@@ -174,9 +181,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     backgroundColor: '#B8F23E',
-    paddingHorizontal: 16,
+    paddingHorizontal: 14,
     paddingVertical: 7,
-    borderRadius: Radius.full,
+    borderRadius: Radius.sm,
   },
   illustrationBadgeText: {
     fontSize: 12,
@@ -194,13 +201,11 @@ const styles = StyleSheet.create({
   },
   illustrationSubtitle: {
     fontSize: 13,
-    color: '#656A5E',
+    color: '#5A5D54',
     textAlign: 'center',
-    lineHeight: 18,
+    lineHeight: 19,
     maxWidth: 340,
   },
-
-  /* Mobile Layout */
   mobileScrollView: {
     flex: 1,
   },
@@ -217,8 +222,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 8,
   },
-
-  /* Form Container */
   formContainer: {
     width: '100%',
     gap: 16,
@@ -237,7 +240,7 @@ const styles = StyleSheet.create({
   brandName: {
     fontSize: 12,
     fontWeight: '800',
-    color: '#73786B',
+    color: '#121212',
     letterSpacing: 0.8,
     textTransform: 'uppercase',
   },
@@ -255,38 +258,42 @@ const styles = StyleSheet.create({
     letterSpacing: -0.4,
   },
   pageSubtitle: {
-    fontSize: 13,
+    fontSize: 13.5,
     lineHeight: 19,
-    color: '#656A5E',
+    color: '#5A5D54',
     fontWeight: '500',
   },
   errorBanner: {
-    backgroundColor: '#FDE8E8',
-    borderRadius: Radius.md,
+    backgroundColor: '#FEE2E2',
+    borderRadius: Radius.sm,
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderWidth: 1,
-    borderColor: '#F8B4B4',
+    borderColor: '#FCA5A5',
   },
   errorText: {
     fontSize: 13,
-    color: '#9B1C1C',
+    color: '#991B1B',
     fontWeight: '600',
   },
   switchRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
+    gap: 4,
     marginTop: 4,
   },
   switchText: {
     fontSize: 13,
-    color: '#656A5E',
+    color: '#5A5D54',
     fontWeight: '500',
   },
   switchAction: {
-    paddingVertical: 4,
+    minHeight: 44,
+    paddingHorizontal: 8,
+    justifyContent: 'center',
+    borderRadius: Radius.sm,
+    ...(Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : null),
   },
   switchLink: {
     fontSize: 13,
@@ -294,4 +301,13 @@ const styles = StyleSheet.create({
     color: '#121212',
     textDecorationLine: 'underline',
   },
+  pressedFade: {
+    opacity: 0.78,
+  },
+  webFocusRing: {
+    outlineWidth: 2,
+    outlineStyle: 'solid',
+    outlineColor: '#121212',
+    outlineOffset: 2,
+  } as any,
 });

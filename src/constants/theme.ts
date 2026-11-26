@@ -6,7 +6,7 @@ export const Colors = {
   light: {
     text: '#121212',
     textSecondary: '#5A5D54',
-    textMuted: '#8A8D84',
+    textMuted: '#5A5D54',
     background: '#F4F6F0',
     backgroundElement: '#FFFFFF',
     backgroundSelected: '#B8F23E',

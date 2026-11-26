@@ -58,11 +58,6 @@ const styles = StyleSheet.create({
     borderColor: Colors.light.border,
     padding: 16,
     gap: 8,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.03,
-    shadowRadius: 6,
-    elevation: 2,
   },
   topRow: {
     flexDirection: 'row',

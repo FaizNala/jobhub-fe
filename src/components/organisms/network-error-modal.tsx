@@ -1,17 +1,17 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  Modal,
-  TouchableOpacity,
   ActivityIndicator,
+  Modal,
   Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
   useWindowDimensions,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import { WifiOff, RefreshCw } from 'lucide-react-native';
-import { Radius } from '@/constants/theme';
+import { RefreshCw, WifiOff } from 'lucide-react-native';
+import { Colors, Radius } from '@/constants/theme';
 import { useNetworkStore } from '@/modules/network';
 import { OfflineStorysetIllustration } from '@/components/atoms/offline-storyset-illustration';
 
@@ -19,8 +19,25 @@ export function NetworkErrorModal() {
   const { width } = useWindowDimensions();
   const isDesktop = width >= 768;
 
-  const { isModalVisible, modalConfig, isRetrying, hideOfflineModal, retryConnection } =
-    useNetworkStore();
+  const {
+    isModalVisible,
+    modalConfig,
+    isRetrying,
+    hideOfflineModal,
+    retryConnection,
+  } = useNetworkStore();
+
+  useEffect(() => {
+    if (Platform.OS !== 'web' || !isModalVisible) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && !isRetrying) {
+        event.preventDefault();
+        hideOfflineModal();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown, true);
+    return () => window.removeEventListener('keydown', handleKeyDown, true);
+  }, [hideOfflineModal, isModalVisible, isRetrying]);
 
   const handleRetry = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
@@ -44,18 +61,20 @@ export function NetworkErrorModal() {
       animationType="slide"
       statusBarTranslucent
       onRequestClose={handleDismiss}>
-      <View style={[styles.overlay, isDesktop ? styles.overlayDesktop : styles.overlayMobile]}>
+      <View
+        style={[
+          styles.overlay,
+          isDesktop ? styles.overlayDesktop : styles.overlayMobile,
+        ]}>
         <View style={isDesktop ? styles.dialogCard : styles.bottomSheetCard}>
-          {/* Drag Handle (Only on Mobile Bottom Sheet) */}
-          {!isDesktop && <View style={styles.dragHandle} />}
+          {/* Drag Handle (Mobile Bottom Sheet) */}
+          {!isDesktop ? <View style={styles.dragHandle} /> : null}
 
-          {/* Storyset Offline Character Illustration */}
           <OfflineStorysetIllustration
             width={isDesktop ? 260 : 220}
             height={isDesktop ? 185 : 160}
           />
 
-          {/* Text Content */}
           <View style={styles.textGroup}>
             <Text style={styles.title}>
               {modalConfig?.title || 'No internet connection'}
@@ -66,17 +85,20 @@ export function NetworkErrorModal() {
             </Text>
           </View>
 
-          {/* Action Buttons */}
           <View style={styles.buttonGroup}>
-            <TouchableOpacity
+            <Pressable
               onPress={handleRetry}
               disabled={isRetrying}
-              style={[
+              style={state => [
                 styles.retryButton,
-                Platform.OS === 'web' && ({ outline: 'none' } as any),
+                isRetrying && styles.disabledButton,
+                state.pressed && !isRetrying && styles.pressedFade,
+                Platform.OS === 'web' && (state as { focused?: boolean }).focused
+                  ? styles.webFocusRing
+                  : null,
               ]}
-              activeOpacity={0.88}
               accessibilityRole="button"
+              accessibilityState={{ busy: isRetrying, disabled: isRetrying }}
               accessibilityLabel="Retry connection">
               {isRetrying ? (
                 <View style={styles.loadingRow}>
@@ -89,16 +111,22 @@ export function NetworkErrorModal() {
                   <Text style={styles.retryButtonText}>Try again</Text>
                 </View>
               )}
-            </TouchableOpacity>
+            </Pressable>
 
-            <TouchableOpacity
+            <Pressable
               onPress={handleDismiss}
-              style={styles.dismissButton}
-              activeOpacity={0.7}
+              disabled={isRetrying}
+              style={state => [
+                styles.dismissButton,
+                state.pressed && styles.pressedFade,
+                Platform.OS === 'web' && (state as { focused?: boolean }).focused
+                  ? styles.webFocusRing
+                  : null,
+              ]}
               accessibilityRole="button"
               accessibilityLabel="Dismiss network alert">
               <Text style={styles.dismissButtonText}>Dismiss</Text>
-            </TouchableOpacity>
+            </Pressable>
           </View>
         </View>
       </View>
@@ -107,7 +135,7 @@ export function NetworkErrorModal() {
 }
 
 export function OfflineAmbientBanner() {
-  const isOnline = useNetworkStore((state) => state.isOnline);
+  const isOnline = useNetworkStore(state => state.isOnline);
 
   if (isOnline) {
     return null;
@@ -117,7 +145,7 @@ export function OfflineAmbientBanner() {
     <View style={styles.bannerContainer}>
       <View style={styles.bannerContent}>
         <WifiOff size={13} color="#991B1B" strokeWidth={2.2} />
-        <Text style={styles.bannerText}>Offline mode • Attempting to reconnect</Text>
+        <Text style={styles.bannerText}>Offline mode · Attempting to reconnect</Text>
       </View>
     </View>
   );
@@ -126,7 +154,7 @@ export function OfflineAmbientBanner() {
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(18, 18, 18, 0.45)',
+    backgroundColor: 'rgba(18, 18, 18, 0.5)',
   },
   overlayMobile: {
     justifyContent: 'flex-end',
@@ -136,64 +164,39 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 24,
   },
-
-  /* Mobile Bottom Sheet Card */
   bottomSheetCard: {
     width: '100%',
     backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
+    borderTopLeftRadius: Radius.lg,
+    borderTopRightRadius: Radius.lg,
     borderTopWidth: 1.5,
     borderLeftWidth: 1.5,
     borderRightWidth: 1.5,
-    borderColor: '#E2E6DC',
+    borderColor: Colors.light.border,
     paddingHorizontal: 24,
     paddingTop: 12,
     paddingBottom: Platform.OS === 'ios' ? 42 : 28,
     alignItems: 'center',
     gap: 16,
-    shadowColor: '#121212',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 16,
-    elevation: 10,
   },
   dragHandle: {
     width: 44,
-    height: 4.5,
-    borderRadius: 3,
+    height: 4,
+    borderRadius: 2,
     backgroundColor: '#D6DBD0',
     alignSelf: 'center',
     marginBottom: 6,
   },
-
-  /* Desktop Centered Dialog Card */
   dialogCard: {
     width: '100%',
-    maxWidth: 400,
+    maxWidth: 420,
     backgroundColor: '#FFFFFF',
-    borderRadius: Radius.xl,
+    borderRadius: Radius.lg,
     padding: 28,
     alignItems: 'center',
     gap: 18,
-    borderWidth: 1,
-    borderColor: '#E2E6DC',
-    shadowColor: '#121212',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.12,
-    shadowRadius: 18,
-    elevation: 8,
-  },
-
-  iconBadge: {
-    width: 58,
-    height: 58,
-    borderRadius: Radius.full,
-    backgroundColor: '#FEE2E2',
-    borderWidth: 1,
-    borderColor: '#FECACA',
-    alignItems: 'center',
-    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: Colors.light.border,
   },
   textGroup: {
     alignItems: 'center',
@@ -218,16 +221,17 @@ const styles = StyleSheet.create({
     gap: 8,
     marginTop: 4,
   },
-
-  /* Primary Action Button - STRICTLY NO BORDER */
   retryButton: {
+    minHeight: 48,
     backgroundColor: '#B8F23E',
     borderRadius: Radius.full,
-    paddingVertical: 14,
+    paddingVertical: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 0,
-    borderColor: 'transparent',
+    ...(Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : null),
+  },
+  disabledButton: {
+    opacity: 0.65,
   },
   loadingRow: {
     flexDirection: 'row',
@@ -241,17 +245,18 @@ const styles = StyleSheet.create({
     letterSpacing: 0.2,
   },
   dismissButton: {
-    paddingVertical: 8,
+    minHeight: 44,
+    paddingVertical: 10,
     alignItems: 'center',
     justifyContent: 'center',
+    borderRadius: Radius.sm,
+    ...(Platform.OS === 'web' ? ({ cursor: 'pointer' } as any) : null),
   },
   dismissButtonText: {
     fontSize: 13,
-    fontWeight: '600',
-    color: '#73786B',
+    fontWeight: '700',
+    color: '#5A5D54',
   },
-
-  /* Ambient Top Banner */
   bannerContainer: {
     position: 'absolute',
     top: Platform.OS === 'web' ? 8 : 46,
@@ -266,21 +271,25 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: '#FEF2F2',
+    backgroundColor: '#FEE2E2',
     borderWidth: 1,
-    borderColor: '#FECACA',
+    borderColor: '#FCA5A5',
     paddingHorizontal: 14,
-    paddingVertical: 6,
+    paddingVertical: 7,
     borderRadius: Radius.full,
-    shadowColor: '#121212',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    elevation: 3,
   },
   bannerText: {
     fontSize: 12,
     fontWeight: '700',
     color: '#991B1B',
   },
+  pressedFade: {
+    opacity: 0.8,
+  },
+  webFocusRing: {
+    outlineWidth: 2,
+    outlineStyle: 'solid',
+    outlineColor: '#121212',
+    outlineOffset: 2,
+  } as any,
 });

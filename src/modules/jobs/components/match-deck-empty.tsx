@@ -177,15 +177,10 @@ const styles = StyleSheet.create({
   cardShell: {
     flex: 1,
     backgroundColor: '#FFFFFF',
-    borderRadius: Radius.xl,
-    borderWidth: 1,
+    borderRadius: Radius.lg,
+    borderWidth: 1.5,
     borderColor: '#E2E6DC',
     overflow: 'hidden',
-    shadowColor: '#121212',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 12,
-    elevation: 3,
   },
   recapHeader: {
     backgroundColor: '#121212',
